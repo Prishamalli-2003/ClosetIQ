@@ -206,6 +206,175 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   const traditional = wardrobe.filter(item => item.category === 'traditional');
   const outerwear = wardrobe.filter(item => item.category === 'outerwear');
 
+  const weather = context.weather || 'moderate';
+  const formality = context.formality || 'casual';
+  const mood = context.mood || null;
+  const destination = context.destination || null;
+
+  const neutrals = ['black', 'white', 'navy', 'gray', 'beige', 'brown'];
+
+  // Score bonus for underused items
+  const wearBonus = (item) => {
+    const w = item.wearCount ?? 0;
+    if (w === 0) return 2;
+    if (w < 3) return 1;
+    return 0;
+  };
+
+  // Formality filter — only block very casual items for formal occasions
+  const formalityOk = (item) => {
+    if (formality === 'formal' || formality === 'black-tie' || formality === 'business-formal') {
+      return !['t-shirt', 'hoodie', 'shorts', 'joggers', 'tank'].includes(item.type);
+    }
+    if (formality === 'very-casual' || formality === 'casual') {
+      return !['evening-gown', 'black-tie'].includes(item.type);
+    }
+    return true; // smart-casual, business-casual — allow everything
+  };
+
+  // Weather filter — light items for hot, warm layers for cold
+  const weatherOk = (item) => {
+    if (weather === 'hot') return !['sweater', 'hoodie', 'coat', 'turtleneck'].includes(item.type);
+    if (weather === 'cold') return !['tank', 'shorts', 'sundress', 'camisole'].includes(item.type);
+    return true;
+  };
+
+  // DRESSES (standalone)
+  dresses.forEach(dress => {
+    if (!formalityOk(dress) || !weatherOk(dress)) return;
+    let score = wearBonus(dress);
+    const reasons = [];
+    if (favColors.includes(dress.color)) { score += 1; reasons.push('your favourite colour'); }
+    if (weather === 'hot' || weather === 'warm') { score += 1; reasons.push('great for warm weather'); }
+    if ((formality === 'formal' || formality === 'black-tie') &&
+        ['evening-gown', 'cocktail-dress', 'formal-dress'].includes(dress.type)) {
+      score += 2; reasons.push('perfect for formal occasions');
+    }
+    if (destination === 'party' || destination === 'date') { score += 1; reasons.push('ideal for ' + destination); }
+    let ow = null;
+    if (weather === 'cool' || weather === 'cold') {
+      ow = outerwear.find(o => neutrals.includes(o.color) || o.color === dress.color);
+    }
+    recommendations.push({
+      dress, outerwear: ow || null, score,
+      explanation: `${dress.name} (${dress.color})${ow ? ' + ' + ow.name : ''} — ${reasons.join(', ') || 'elegant standalone look'}.`,
+    });
+  });
+
+  // TRADITIONAL (standalone)
+  traditional.forEach(item => {
+    if (!formalityOk(item)) return;
+    let score = wearBonus(item);
+    const reasons = [];
+    if (favColors.includes(item.color)) { score += 1; reasons.push('your favourite colour'); }
+    if (['party', 'wedding', 'festival', 'religious'].includes(destination)) { score += 2; reasons.push('perfect for ' + destination); }
+    recommendations.push({
+      traditional: item, score,
+      explanation: `${item.name} (${item.color}) — ${reasons.join(', ') || 'elegant traditional choice'}.`,
+    });
+  });
+
+  // TOP + BOTTOM combinations
+  tops.forEach(top => {
+    if (!formalityOk(top) || !weatherOk(top)) return;
+    bottoms.forEach(bottom => {
+      if (!formalityOk(bottom) || !weatherOk(bottom)) return;
+
+      let score = wearBonus(top) + wearBonus(bottom);
+      const reasons = [];
+
+      // Color harmony
+      const topNeutral = neutrals.includes(top.color);
+      const botNeutral = neutrals.includes(bottom.color);
+      if (topNeutral || botNeutral || top.color === bottom.color) {
+        score += 1; reasons.push('great colour harmony');
+      }
+
+      if (favColors.includes(top.color) || favColors.includes(bottom.color)) {
+        score += 1; reasons.push('uses your favourite colours');
+      }
+
+      // Mood
+      if (mood === 'tired' || mood === 'stressed') {
+        if (topNeutral && botNeutral) { score += 1; reasons.push('easy neutral combo for your mood'); }
+      }
+      if (mood === 'confident' || mood === 'excited') {
+        if (!topNeutral || !botNeutral) { score += 1; reasons.push('bold combo matching your energy'); }
+      }
+
+      // Weather
+      if (weather === 'hot' && ['t-shirt', 'tank', 'camisole'].includes(top.type)) {
+        score += 1; reasons.push('light and breathable for hot weather');
+      }
+      if (weather === 'cold' && ['sweater', 'hoodie'].includes(top.type)) {
+        score += 1; reasons.push('warm and cosy for cold weather');
+      }
+
+      // Occasion
+      if (destination === 'work' || destination === 'formal') {
+        if (['shirt', 'blouse', 'polo'].includes(top.type) &&
+            ['trousers', 'chinos', 'skirt'].includes(bottom.type)) {
+          score += 2; reasons.push('smart work-appropriate combo');
+        }
+      }
+      if (destination === 'casual' || destination === 'shopping') {
+        if (['t-shirt', 'crop-top', 'tank'].includes(top.type) &&
+            ['jeans', 'shorts', 'leggings'].includes(bottom.type)) {
+          score += 1; reasons.push('relaxed casual look');
+        }
+      }
+
+      // Add outerwear for cool/cold
+      let ow = null;
+      if (weather === 'cool' || weather === 'cold') {
+        ow = outerwear.find(o =>
+          neutrals.includes(o.color) || o.color === top.color || o.color === bottom.color
+        );
+        if (ow) { score += 1; reasons.push('layered for cooler weather'); }
+      }
+
+      recommendations.push({
+        top, bottom, outerwear: ow || null, score,
+        explanation: `${top.name} + ${bottom.name}${ow ? ' + ' + ow.name : ''} — ${reasons.join(', ') || 'versatile combination'}.`,
+      });
+    });
+  });
+
+  // Sort by score, deduplicate similar combos, return top 5
+  const sorted = recommendations.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+
+  // Pick diverse results — avoid same top or same bottom twice
+  const usedTops = new Set();
+  const usedBottoms = new Set();
+  const usedDresses = new Set();
+  const result = [];
+
+  for (const rec of sorted) {
+    if (result.length >= 5) break;
+    if (rec.dress) {
+      if (usedDresses.has(rec.dress.id)) continue;
+      usedDresses.add(rec.dress.id);
+    } else if (rec.traditional) {
+      // always include traditional if scored
+    } else {
+      if (usedTops.has(rec.top?.id) && usedBottoms.has(rec.bottom?.id)) continue;
+      usedTops.add(rec.top?.id);
+      usedBottoms.add(rec.bottom?.id);
+    }
+    result.push(rec);
+  }
+
+  return result;
+};
+  const recommendations = [];
+  const favColors = preferences.favoriteColors || [];
+
+  const tops = wardrobe.filter(item => item.category === 'top');
+  const bottoms = wardrobe.filter(item => item.category === 'bottom');
+  const dresses = wardrobe.filter(item => item.category === 'dress');
+  const traditional = wardrobe.filter(item => item.category === 'traditional');
+  const outerwear = wardrobe.filter(item => item.category === 'outerwear');
+
   const neutrals = ['black', 'white', 'navy', 'gray', 'beige', 'brown'];
   const destination = context.destination || null;
   const mood = context.mood || null;
@@ -213,20 +382,15 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   const formality = context.formality || 'casual';
 
   const matchesDestination = (item) => {
-    if (!destination || destination === 'other') return true;
-    const occ = item.preferredOccasion || item.category || 'other';
-    if (occ === destination) return true;
-    if (occ === 'other') return true;
-    if ((destination === 'formal' && occ === 'work') || (destination === 'work' && occ === 'formal')) return true;
-    return false;
+    // Very permissive — only exclude obvious mismatches
+    if (!destination || destination === 'other' || destination === 'casual') return true;
+    return true; // allow all items, scoring handles preference
   };
 
-  const matchesFormality = (item, formalityLevel) => {
-    const formalCategories = ['formal', 'business-casual', 'black-tie'];
-    const casualCategories = ['very-casual', 'casual', 'smart-casual'];
-    
-    if (formalCategories.includes(formalityLevel)) {
-      return item.type !== 't-shirt' && item.type !== 'hoodie' && item.type !== 'shorts';
+  const matchesFormality = (item) => {
+    // Only exclude gym/sport items for formal occasions
+    if (formality === 'black-tie' || formality === 'business-formal') {
+      if (item.type === 'hoodie' || item.type === 'joggers' || item.type === 'leggings') return false;
     }
     return true;
   };
