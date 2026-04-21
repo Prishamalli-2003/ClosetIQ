@@ -12,10 +12,27 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', 'Inter', serif;
+  letter-spacing: -0.02em;
+}
+
+/* Form titles use Playfair for elegance */
+.form-title, .page-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* ============================================================
@@ -2213,4 +2230,161 @@ body {
 .quote-icon {
   flex-shrink: 0;
   font-style: normal;
+}
+
+/* ============================================================
+   FONT & VISUAL POLISH
+   ============================================================ */
+
+/* Smoother card glass effect */
+.form-card,
+.page-card,
+.onboarding-form,
+.auth-form {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Refined input styling */
+.form-input,
+.form-select,
+.iq-input {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
+}
+
+/* Navbar brand — Playfair */
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Page titles */
+.form-title {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1.2;
+}
+
+/* Subtitles */
+.form-subtitle {
+  font-size: 0.95rem;
+  font-weight: 400;
+  opacity: 0.88;
+  letter-spacing: 0;
+}
+
+/* Labels */
+.form-label,
+.iq-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.9;
+}
+
+/* Buttons — Inter medium weight */
+.form-submit,
+.iq-submit,
+.btn-primary,
+.btn-pill,
+.dash-action-btn,
+.camera-button {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Clothing item card — cleaner */
+.clothing-item-info h3 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.clothing-item-info p {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Recommendation card */
+.rec-item-name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+/* Dashboard stat tiles */
+.dashboard-stat-tile h3 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-stat-tile p {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Quote block */
+.page-header-quote {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Notification list */
+.dashboard-notifications-list li {
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Drawer links */
+.drawer-link {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Bottom tab labels */
+.bottom-tab-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Onboarding headings */
+.onboarding-step h2 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Auth form headings */
+.auth-form h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+}
+
+/* Chip / tag text */
+.chip {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Analytics panel titles */
+.analytics-panel-title {
+  font-family: 'Playfair Display', serif;
 }

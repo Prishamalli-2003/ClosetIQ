@@ -85,19 +85,39 @@ export const addWardrobeItem = async (itemData) => {
   const userId = uid();
   if (!userId) throw new Error('Not logged in');
 
-  const ref = await addDoc(collection(db, 'users', userId, 'wardrobe'), {
-    ...itemData,
-    wearCount: 0,
-    lastWorn: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  // Clean, consistent schema stored in Firestore
+  const cleanItem = {
+    // Identity
+    name:          itemData.name?.trim() || 'Unnamed',
+    category:      itemData.category || 'top',
+    type:          itemData.type || 'other',
+    color:         itemData.color || 'black',
+    size:          itemData.size || 'M',
+    brand:         itemData.brand?.trim() || null,
 
-  // Update user stats
+    // Financial
+    purchasePrice: Number(itemData.purchasePrice) || 0,
+    purchaseDate:  itemData.purchaseDate || null,
+
+    // Image — stored as URL (Firebase Storage) or Base64 data URL
+    imageUrl:      itemData.imageUrl || null,
+
+    // Usage tracking
+    wearCount:     0,
+    lastWorn:      null,
+
+    // Metadata
+    createdAt:     serverTimestamp(),
+    updatedAt:     serverTimestamp(),
+  };
+
+  const ref = await addDoc(collection(db, 'users', userId, 'wardrobe'), cleanItem);
+
+  // Update user-level stats
   await updateDoc(doc(db, 'users', userId), {
-    'stats.totalItems': increment(1),
-    'stats.totalWardrobeValue': increment(itemData.purchasePrice || 0),
-    'stats.lastUpdated': serverTimestamp(),
+    'stats.totalItems':        increment(1),
+    'stats.totalWardrobeValue': increment(cleanItem.purchasePrice),
+    'stats.lastUpdated':       serverTimestamp(),
   }).catch(() => {});
 
   return ref.id;
@@ -121,30 +141,31 @@ export const saveOutfitLog = async (logData, wardrobe) => {
   const userId = uid();
   if (!userId) throw new Error('Not logged in');
 
-  // Calculate total outfit value from selected items
   const totalOutfitValue = (logData.itemIds || []).reduce((sum, id) => {
     const item = wardrobe.find((w) => w.id === id);
     return sum + (item?.purchasePrice || 0);
   }, 0);
 
-  const ref = await addDoc(collection(db, 'users', userId, 'outfitLogs'), {
-    date: logData.date,
-    occasion: logData.occasion,
-    mood: logData.mood,
-    itemIds: logData.itemIds || [],
-    description: logData.description || null,
-    brand: logData.brand || null,
-    outfitType: logData.outfitType || null,
-    imageUrl: logData.imageUrl || null,
+  // Clean schema
+  const cleanLog = {
+    date:            logData.date,
+    occasion:        logData.occasion || 'casual',
+    mood:            logData.mood || 'good',
+    itemIds:         logData.itemIds || [],
+    itemCount:       (logData.itemIds || []).length,
+    description:     logData.description || null,
+    brand:           logData.brand || null,
+    outfitType:      logData.outfitType || null,
+    imageUrl:        logData.imageUrl || null,
     totalOutfitValue,
-    itemCount: (logData.itemIds || []).length,
-    createdAt: serverTimestamp(),
-  });
+    createdAt:       serverTimestamp(),
+  };
 
-  // Update user stats
+  const ref = await addDoc(collection(db, 'users', userId, 'outfitLogs'), cleanLog);
+
   await updateDoc(doc(db, 'users', userId), {
     'stats.totalOutfitLogs': increment(1),
-    'stats.lastUpdated': serverTimestamp(),
+    'stats.lastUpdated':     serverTimestamp(),
   }).catch(() => {});
 
   return ref.id;
