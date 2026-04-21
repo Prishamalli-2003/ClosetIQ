@@ -14,6 +14,7 @@ import OutfitLog from './pages/OutfitLog';
 import Recommendations from './pages/Recommendations';
 import PurchaseSupport from './pages/PurchaseSupport';
 import Analytics from './pages/Analytics';
+import Profile from './pages/Profile';
 import './App.css';
 
 function App() {
@@ -130,6 +131,19 @@ function App() {
                 <Navigation />
                 <main className="main-content">
                   <Analytics />
+                </main>
+              </div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <div className="app-with-nav">
+                <Navigation />
+                <main className="main-content">
+                  <Profile />
                 </main>
               </div>
             </ProtectedRoute>

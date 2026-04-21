@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { generateOutfitRecommendations } from '../services/analyticsLogic';
 import RecommendationCard from '../components/RecommendationCard';
 import { OCCASIONS, MOODS } from '../utils/constants';

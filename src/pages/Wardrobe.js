@@ -14,6 +14,9 @@ const Wardrobe = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterColor, setFilterColor] = useState("all");
   const [form, setForm] = useState({ name: "", category: "top", type: "t-shirt", color: "black", purchasePrice: "", size: "M", brand: "", purchaseDate: "", imageBase64: null });
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const fileInputRef = useRef(null);
@@ -66,6 +69,14 @@ const Wardrobe = () => {
     } catch (err) { alert(err.message); }
   };
 
+  const filteredItems = items.filter(item => {
+    const q = search.toLowerCase();
+    const ms = !q || [(item.name||""),(item.color||""),(item.brand||""),(item.type||"")].some(v => v.toLowerCase().includes(q));
+    const mc = filterCategory === "all" || item.category === filterCategory;
+    const mco = filterColor === "all" || item.color === filterColor;
+    return ms && mc && mco;
+  });
+
   if (loading) return <div className="page-loading">Loading wardrobe...</div>;
 
   return (
@@ -73,11 +84,12 @@ const Wardrobe = () => {
       {saving && <div className="upload-overlay"><div className="upload-spinner" /><p>Saving...</p></div>}
       <div className="page-card">
         <div className="page-card-header">
-          <h1 className="page-title">My Wardrobe</h1>
+          <h1 className="page-title">My Wardrobe <span style={{fontSize:"0.85rem",opacity:0.7,fontWeight:400}}>({items.length} items)</span></h1>
           <button type="button" className={showAdd ? "btn-pill btn-pill--cancel" : "btn-pill btn-pill--primary"} onClick={() => setShowAdd(!showAdd)}>
             {showAdd ? "Cancel" : "+ Add Item"}
           </button>
         </div>
+
         {showAdd && (
           <form className="iq-form" onSubmit={handleSubmit}>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImagePicked} style={{ display: "none" }} />
@@ -94,18 +106,33 @@ const Wardrobe = () => {
               <div className="iq-form-group"><label className="iq-label">Type</label><select className="iq-input" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>{typesForCategory.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("-", " ")}</option>)}</select></div>
               <ColorPalettePicker value={form.color} onChange={(color) => setForm((f) => ({ ...f, color }))} label="Color" />
               <div className="iq-form-group"><label className="iq-label">Size</label><select className="iq-input" value={form.size} onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}>{["XS","S","M","L","XL","XXL","Free size"].map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-              <div className="iq-form-group"><label className="iq-label">Brand (optional)</label><input type="text" className="iq-input" placeholder="e.g. Zara" value={form.brand} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))} /></div>
+              <div className="iq-form-group"><label className="iq-label">Brand (optional)</label><input type="text" className="iq-input" placeholder="e.g. Zara, H&M" value={form.brand} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value }))} /></div>
               <div className="iq-form-group"><label className="iq-label">Price (optional)</label><input type="number" className="iq-input" min="0" placeholder="0" value={form.purchasePrice} onChange={(e) => setForm((f) => ({ ...f, purchasePrice: e.target.value }))} /></div>
               <div className="iq-form-group"><label className="iq-label">Purchase Date (optional)</label><input type="date" className="iq-input" value={form.purchaseDate} onChange={(e) => setForm((f) => ({ ...f, purchaseDate: e.target.value }))} /></div>
             </div>
             <button type="submit" className="iq-submit" disabled={saving || processing}>{saving ? "Saving..." : "Add to Wardrobe"}</button>
           </form>
         )}
+
         {!showAdd && (
           <div>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+              <input type="text" className="iq-input" placeholder="Search name, color, brand..." value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 2, minWidth: "150px" }} />
+              <select className="iq-input" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ flex: 1, minWidth: "110px" }}>
+                <option value="all">All Categories</option>
+                {CLOTHING_CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+              <select className="iq-input" value={filterColor} onChange={e => setFilterColor(e.target.value)} style={{ flex: 1, minWidth: "100px" }}>
+                <option value="all">All Colors</option>
+                {["black","white","navy","gray","beige","brown","red","blue","green","yellow","pink","orange","purple","maroon","teal","coral","lavender","cream","gold","silver","olive","burgundy"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+            </div>
             <DeletionSuggestions items={items} onDeleteItem={handleDelete} maxItems={50} />
             <div className="wardrobe-grid">
-              {items.length === 0 ? <div className="empty-state"><p>Your wardrobe is empty</p><p>Tap Add Item to get started</p></div> : items.map((item) => <ClothingItem key={item.id} id={item.id} item={item} onDelete={handleDelete} />)}
+              {filteredItems.length === 0
+                ? <div className="empty-state"><span>{items.length === 0 ? "👗" : "🔍"}</span><p>{items.length === 0 ? "Your wardrobe is empty" : "No items match your search"}</p></div>
+                : filteredItems.map(item => <ClothingItem key={item.id} id={item.id} item={item} onDelete={handleDelete} />)
+              }
             </div>
           </div>
         )}

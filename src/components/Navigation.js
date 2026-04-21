@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: '/recommendations',  label: 'Outfits',    icon: '✨' },
   { to: '/purchase-support', label: 'Purchase',   icon: '🛍️' },
   { to: '/analytics',        label: 'Analytics',  icon: '📊' },
+  { to: '/profile',          label: 'Profile',    icon: '👤' },
 ];
 
 const Navigation = () => {
