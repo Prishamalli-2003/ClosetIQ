@@ -57,16 +57,20 @@ const PurchaseSupport = () => {
     }
     const redundancyResult = detectRedundancy(wardrobe, newItem);
     const costPerWear = calculateSmartCostPerWear(newItem.price ?? 0, 0, newItem.category);
-    let recommendation = 'BUY - This adds variety to your wardrobe';
-    let reasoning = 'This item adds diversity and can match your style profile.';
 
-    if (redundancyResult.similarCount >= 2) {
-      recommendation = "DON'T BUY - You already own this";
-      reasoning = `You have ${redundancyResult.similarCount} very similar items already. Buying this would be a duplicate purchase.`;
+    let recommendation, reasoning;
+
+    if (redundancyResult.similarCount === 0) {
+      recommendation = 'BUY — This adds variety to your wardrobe';
+      reasoning = 'You don\'t own anything similar. This is a good addition.';
     } else if (redundancyResult.similarCount === 1) {
-      recommendation = "MAYBE - You have something similar";
-      const similar = redundancyResult.items[0];
-      reasoning = `You already own "${similar?.name || 'a similar item'}" (${similar?.color || ''}, ₹${similar?.purchasePrice || 0}). Check if this adds enough difference to justify the purchase.`;
+      const s = redundancyResult.items[0];
+      recommendation = 'MAYBE — You have something similar';
+      reasoning = `You already own "${s?.name || 'a similar item'}" (${s?.color || ''}, ₹${s?.purchasePrice || 0}, worn ${s?.wearCount || 0}×). Only buy if this adds something meaningfully different.`;
+    } else {
+      recommendation = "DON'T BUY — You already own this";
+      const names = redundancyResult.items.slice(0, 3).map(i => `"${i.name}"`).join(', ');
+      reasoning = `You already have ${redundancyResult.similarCount} similar items: ${names}. Adding another would be a duplicate purchase.`;
     }
 
     setAnalysis({ ...redundancyResult, costPerWear, recommendation, reasoning });

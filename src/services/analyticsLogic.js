@@ -85,40 +85,44 @@ export const detectRedundancy = (items, newItem) => {
   const newName = (newItem.name || '').toLowerCase().trim();
   const newCategory = newItem.category || '';
   const newColor = newItem.color || '';
+  const newBrand = (newItem.brand || '').toLowerCase().trim();
 
   const similarItems = items.filter(item => {
     const itemName = (item.name || '').toLowerCase().trim();
+    const itemBrand = (item.brand || '').toLowerCase().trim();
     const itemPrice = Number(item.purchasePrice ?? item.price ?? 0);
-    const priceWindow = Math.max(500, newPrice * 0.25);
+    const priceWindow = Math.max(1000, newPrice * 0.4); // 40% price window
 
-    // Exact or near-exact name match
-    const nameMatch = newName.length > 2 && (
-      itemName === newName ||
-      itemName.includes(newName) ||
-      newName.includes(itemName) ||
-      // word overlap — 2+ shared words
-      newName.split(' ').filter(w => w.length > 2 && itemName.includes(w)).length >= 2
-    );
+    // 1. Exact name match
+    if (newName.length > 2 && itemName === newName) return true;
 
-    // Same category + same color
-    const categoryColorMatch = item.category === newCategory && item.color === newColor;
+    // 2. Same brand + same category + same color
+    if (newBrand && itemBrand && newBrand === itemBrand &&
+        item.category === newCategory && item.color === newColor) return true;
 
-    // Same category + similar price (within 25%)
-    const categoryPriceMatch = item.category === newCategory &&
-      newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow;
+    // 3. Same category + same color + similar price
+    if (item.category === newCategory && item.color === newColor &&
+        newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow) return true;
 
-    return nameMatch || categoryColorMatch || categoryPriceMatch;
+    // 4. Same category + same type (e.g. 3 white tops = don't buy another white top)
+    if (item.category === newCategory && item.color === newColor) return true;
+
+    // 5. Name word overlap (2+ meaningful words match)
+    if (newName.length > 4) {
+      const newWords = newName.split(' ').filter(w => w.length > 3);
+      const matchedWords = newWords.filter(w => itemName.includes(w));
+      if (matchedWords.length >= 2) return true;
+    }
+
+    return false;
   });
 
-  // Deduplicate
+  // Deduplicate by id
   const unique = [...new Map(similarItems.map(i => [i.id, i])).values()];
 
   return {
     similarCount: unique.length,
     items: unique,
-    recommendation: unique.length >= 1
-      ? 'You already have similar items. Consider if this is necessary.'
-      : 'This could be a good addition to your wardrobe.',
   };
 };
 

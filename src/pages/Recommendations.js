@@ -264,10 +264,11 @@ const Recommendations = () => {
           
           {recommendations.length === 0 ? (
             <div className="form-card" style={{ textAlign: 'center', padding: '3rem' }}>
-              <p style={{ fontSize: '3rem', margin: 0 }}>👕</p>
-              <h3 style={{ color: 'white', marginTop: '1rem' }}>No Recommendations Yet</h3>
+              <p style={{ fontSize: '3rem', margin: 0 }}>✨</p>
+              <h3 style={{ color: 'white', marginTop: '1rem' }}>No matching outfits found</h3>
               <p style={{ color: 'rgba(255,255,255,0.7)' }}>
-                Add more clothing items in My Wardrobe to get outfit ideas.
+                Try changing the occasion, weather, or formality filters to see different combinations.
+                {wardrobe.length < 5 && ' Adding more items to your wardrobe will also help.'}
               </p>
             </div>
           ) : (
