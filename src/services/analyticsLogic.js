@@ -405,7 +405,7 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   // DRESS RECOMMENDATIONS (standalone outfits)
   dresses.forEach(dress => {
     if (!matchesDestination(dress)) return;
-    if (!matchesFormality(dress, formality)) return;
+    if (!matchesFormality(dress)) return;
 
     let score = 0;
     const reasons = [];
@@ -485,7 +485,7 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
     bottoms.forEach(bottom => {
       if (!areColorsCompatible(top.color, bottom.color, favColors)) return;
       if (!matchesDestination(top) || !matchesDestination(bottom)) return;
-      if (!matchesFormality(top, formality) || !matchesFormality(bottom, formality)) return;
+      if (!matchesFormality(top) || !matchesFormality(bottom)) return;
 
       let score = 0;
       const reasons = [];
