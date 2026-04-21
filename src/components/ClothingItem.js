@@ -1,5 +1,22 @@
 import { calculateAdjustedCostPerWear } from '../services/analyticsLogic';
 import { formatINR } from '../utils/currency';
+import { COLOR_PALETTE } from '../utils/constants';
+
+const ColorDot = ({ color }) => {
+  const found = COLOR_PALETTE.find(c => c.name === color);
+  const hex = found?.hex || '#ccc';
+  const label = color ? color.charAt(0).toUpperCase() + color.slice(1).replace('-', ' ') : '—';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+      <span style={{
+        display: 'inline-block', width: 14, height: 14, borderRadius: '50%',
+        backgroundColor: hex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0,
+      }} title={hex} />
+      <span>{label}</span>
+      <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontFamily: 'monospace' }}>{hex.toUpperCase()}</span>
+    </span>
+  );
+};
 
 const ClothingItem = ({ item, id, onDelete }) => {
   const { name, category, type, color, imageUrl, wearCount, purchasePrice } = item || {};
@@ -25,10 +42,10 @@ const ClothingItem = ({ item, id, onDelete }) => {
       <div className="clothing-item-info">
         <h3>{name || 'Unnamed item'}</h3>
         <p><strong>Category:</strong> {category}</p>
-        <p><strong>Type:</strong> {type}</p>
-        <p><strong>Color:</strong> {color}</p>
-        <p><strong>Worn:</strong> {wearCount ?? 0} times</p>
-        <p><strong>Cost per wear (type-adjusted):</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
+        <p><strong>Type:</strong> {type?.replace('-', ' ')}</p>
+        <p><strong>Color:</strong> <ColorDot color={color} /></p>
+        <p><strong>Worn:</strong> {wearCount ?? 0}×</p>
+        <p><strong>CPW:</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
         {onDelete && (
           <button type="button" className="btn-delete" onClick={() => onDelete(id)}>
             Remove

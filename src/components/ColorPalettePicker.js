@@ -11,43 +11,50 @@ const ColorPalettePicker = ({ value, onChange, label = '🎨 Color' }) => {
       <label className="form-label">
         {label}
         {selected && (
-          <span className="label-hint">
-            {labelFor(selected.name)} — <code>{selected.hex.toUpperCase()}</code>
+          <span className="label-hint" style={{ fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+            {labelFor(selected.name)} · {selected.hex.toUpperCase()}
           </span>
         )}
       </label>
 
       <div className="color-swatch-grid">
         {COLOR_PALETTE.map((color) => (
-          <button
-            key={color.name}
-            type="button"
-            title={`${labelFor(color.name)} ${color.hex.toUpperCase()}`}
-            className={`color-swatch ${value === color.name ? 'color-swatch--selected' : ''}`}
-            style={{ backgroundColor: color.name === 'multi'
-              ? 'linear-gradient(135deg,#ff6b6b,#4ecdc4,#ffe66d)'
-              : color.hex
-            }}
-            onClick={() => onChange?.(color.name)}
-          >
-            {color.name === 'multi' && (
-              <span className="swatch-multi">🌈</span>
-            )}
-            {value === color.name && color.name !== 'multi' && (
-              <span className="swatch-check">✓</span>
-            )}
-          </button>
+          <div key={color.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <button
+              type="button"
+              title={`${labelFor(color.name)} — ${color.hex.toUpperCase()}`}
+              className={`color-swatch ${value === color.name ? 'color-swatch--selected' : ''}`}
+              style={{ backgroundColor: color.hex }}
+              onClick={() => onChange?.(color.name)}
+            >
+              {value === color.name && (
+                <span className="swatch-check">✓</span>
+              )}
+            </button>
+            <span style={{
+              fontSize: '0.55rem',
+              color: 'rgba(255,255,255,0.7)',
+              fontFamily: 'monospace',
+              letterSpacing: '0.02em',
+              lineHeight: 1,
+              textAlign: 'center',
+            }}>
+              {color.hex.toUpperCase()}
+            </span>
+          </div>
         ))}
       </div>
 
       {selected && (
-        <p className="color-hex-display">
-          <span
-            className="color-hex-dot"
-            style={{ backgroundColor: selected.hex }}
-          />
-          {labelFor(selected.name)} &nbsp;·&nbsp; <code>{selected.hex.toUpperCase()}</code>
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+          <span style={{ width: 18, height: 18, borderRadius: '50%', backgroundColor: selected.hex, border: '2px solid rgba(255,255,255,0.4)', display: 'inline-block', flexShrink: 0 }} />
+          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem' }}>
+            {labelFor(selected.name)}
+          </span>
+          <code style={{ background: 'rgba(255,255,255,0.15)', padding: '0.1rem 0.4rem', borderRadius: 4, fontSize: '0.8rem', color: 'white', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+            {selected.hex.toUpperCase()}
+          </code>
+        </div>
       )}
     </div>
   );

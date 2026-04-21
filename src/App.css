@@ -2454,3 +2454,53 @@ h1, h2, h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   COLOR SWATCH GRID — with hex codes
+   ============================================================ */
+.color-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+
+.color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.18);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  z-index: 1;
+}
+
+.color-swatch--selected {
+  border: 2.5px solid white;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+
+.swatch-check {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* Cleanup suggestions compact layout */
+.deletion-suggestions {
+  margin-bottom: 1.5rem;
+}
