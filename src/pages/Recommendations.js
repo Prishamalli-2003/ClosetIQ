@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { generateOutfitRecommendations } from '../services/analyticsLogic';
 import RecommendationCard from '../components/RecommendationCard';
 import { OCCASIONS, MOODS } from '../utils/constants';
@@ -14,6 +14,7 @@ const Recommendations = () => {
   const [preferences, setPreferences] = useState({});
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [mood, setMood] = useState('good');
   const [destination, setDestination] = useState('casual');
   const [outfitLogs, setOutfitLogs] = useState([]);
@@ -22,6 +23,7 @@ const Recommendations = () => {
   const [colorPreference, setColorPreference] = useState('any');
   const [style, setStyle] = useState('any');
   const [showResults, setShowResults] = useState(false);
+  const [cacheKey, setCacheKey] = useState('');
 
   const userId = auth.currentUser?.uid;
 
@@ -44,44 +46,77 @@ const Recommendations = () => {
     load();
   }, [userId]);
 
-  useEffect(() => {
-    if (loading || !showResults) return;
-    const base = generateOutfitRecommendations(wardrobe, preferences, { 
-      mood, 
-      destination,
-      weather,
-      formality,
-      colorPreference,
-      style
-    });
-
-    // Avoid repeating the exact last combination for the same occasion
-    const lastForOccasion = outfitLogs
-      .filter((l) => l.occasion === destination)
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-    const normalize = (ids) => [...ids].sort().join('|');
-    const lastKey = lastForOccasion && Array.isArray(lastForOccasion.itemIds)
-      ? normalize(lastForOccasion.itemIds)
-      : null;
-
-    const filtered = lastKey
-      ? base.filter((rec) => {
-          const ids = [
-            rec.top?.id,
-            rec.bottom?.id,
-            rec.outerwear?.id,
-          ].filter(Boolean);
-          if (!ids.length) return true;
-          return normalize(ids) !== lastKey;
-        })
-      : base;
-
-    setRecommendations(filtered);
-  }, [loading, wardrobe, preferences, mood, destination, outfitLogs, weather, formality, colorPreference, style, showResults]);
-
-  const handleGetRecommendations = () => {
+  const handleGetRecommendations = async () => {
     setShowResults(true);
+    setGenerating(true);
+
+    // Build a cache key from the context
+    const key = `${destination}-${weather}-${formality}-${mood}`;
+    setCacheKey(key);
+
+    try {
+      // Check Firestore cache first
+      const cacheRef = doc(db, 'users', userId, 'recommendationCache', key);
+      const cached = await getDoc(cacheRef);
+
+      if (cached.exists()) {
+        const data = cached.data();
+        // Use cache if less than 1 hour old
+        const age = Date.now() - (data.generatedAt?.toMillis?.() || 0);
+        if (age < 60 * 60 * 1000) {
+          setRecommendations(data.recommendations || []);
+          setGenerating(false);
+          return;
+        }
+      }
+
+      // Generate fresh recommendations
+      const base = generateOutfitRecommendations(wardrobe, preferences, {
+        mood, destination, weather, formality, colorPreference, style
+      });
+
+      // Filter out exact repeat of last outfit for this occasion
+      const lastForOccasion = outfitLogs
+        .filter((l) => l.occasion === destination)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+      const normalize = (ids) => [...ids].sort().join('|');
+      const lastKey = lastForOccasion && Array.isArray(lastForOccasion.itemIds)
+        ? normalize(lastForOccasion.itemIds) : null;
+
+      const filtered = lastKey
+        ? base.filter((rec) => {
+            const ids = [rec.top?.id, rec.bottom?.id, rec.outerwear?.id].filter(Boolean);
+            if (!ids.length) return true;
+            return normalize(ids) !== lastKey;
+          })
+        : base;
+
+      setRecommendations(filtered);
+
+      // Save to Firestore cache (strip circular refs — only save serialisable fields)
+      const serialisable = filtered.map(r => ({
+        score: r.score || 0,
+        outfitType: r.outfitType || 'top+bottom',
+        explanation: r.explanation || '',
+        top:         r.top         ? { id: r.top.id,         name: r.top.name,         color: r.top.color,         imageUrl: r.top.imageUrl || null }         : null,
+        bottom:      r.bottom      ? { id: r.bottom.id,      name: r.bottom.name,      color: r.bottom.color,      imageUrl: r.bottom.imageUrl || null }      : null,
+        dress:       r.dress       ? { id: r.dress.id,       name: r.dress.name,       color: r.dress.color,       imageUrl: r.dress.imageUrl || null }       : null,
+        traditional: r.traditional ? { id: r.traditional.id, name: r.traditional.name, color: r.traditional.color, imageUrl: r.traditional.imageUrl || null } : null,
+        outerwear:   r.outerwear   ? { id: r.outerwear.id,   name: r.outerwear.name,   color: r.outerwear.color,   imageUrl: r.outerwear.imageUrl || null }   : null,
+      }));
+
+      await setDoc(cacheRef, {
+        recommendations: serialisable,
+        context: { destination, weather, formality, mood },
+        generatedAt: serverTimestamp(),
+      }).catch(() => {}); // non-critical
+
+    } catch (err) {
+      console.error('Recommendation error:', err);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   if (loading) return <div className="page-loading">Loading recommendations...</div>;
@@ -245,7 +280,7 @@ const Recommendations = () => {
               e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
             }}
           >
-            ✨ Get My Outfit Recommendations
+            {generating ? '⏳ Generating...' : '✨ Get My Outfit Recommendations'}
           </button>
         </div>
       </div>
