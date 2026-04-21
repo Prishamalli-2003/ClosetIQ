@@ -1,70 +1,100 @@
-# Getting Started with Create React App
+# ClosetIQ — Smart Wardrobe Management App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React web app that helps you manage your wardrobe, get outfit recommendations, track wear frequency, and make smarter purchase decisions.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Digital Wardrobe** — Add clothing items with photos (ghost mannequin background removal via remove.bg)
+- **Outfit Recommendations** — AI-powered mix & match based on occasion, weather, mood, formality, and style
+- **Outfit Log** — Track what you wear daily with wear count analytics
+- **Purchase Decision Support** — Check if a new item overlaps your wardrobe before buying
+- **Analytics** — Cost per wear, utilization rates, wardrobe insights
+- **Onboarding** — Personalized setup with gender, body type, color preferences, and style quiz
+- **Mobile Responsive** — Works on iPhone/Android with hamburger nav and bottom tab bar
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- React.js
+- Firebase (Authentication + Firestore)
+- remove.bg API (background removal for product-style photos)
+- CSS with glass-morphism design
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Setup
 
-### `npm test`
+### 1. Install dependencies
+```bash
+npm install
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2. Configure Firebase
+Create a project at [console.firebase.google.com](https://console.firebase.google.com) with:
+- Authentication (Email/Password)
+- Firestore Database
+- Storage (optional — app falls back to Base64 if unavailable)
 
-### `npm run build`
+Update `src/services/firebase.js` with your config.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 3. Configure remove.bg (optional)
+Get a free API key at [remove.bg/api](https://www.remove.bg/api) (50 free removals/month).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a `.env` file:
+```
+REACT_APP_REMOVE_BG_KEY=your_api_key_here
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 4. Run locally
+```bash
+npm start
+```
 
-### `npm run eject`
+### 5. Access on mobile
+```bash
+set HOST=0.0.0.0 && npm start
+```
+Then open `http://YOUR_WIFI_IP:3000` on your phone (both devices must be on same WiFi).
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Deploy to Vercel
+```bash
+npm run build
+npx vercel --prod
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Project Structure
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```
+src/
+├── components/
+│   ├── Navigation.js          # Hamburger + bottom tabs (mobile)
+│   ├── ClothingItem.js        # Wardrobe item card
+│   ├── ColorPalettePicker.js  # Visual color swatch grid
+│   ├── GhostMannequinPlaceholder.js
+│   ├── RecommendationCard.js
+│   ├── DeletionSuggestions.js
+│   └── CustomDropdown.js
+├── pages/
+│   ├── Dashboard.js
+│   ├── Wardrobe.js
+│   ├── OutfitLog.js
+│   ├── Recommendations.js
+│   ├── PurchaseSupport.js
+│   ├── Analytics.js
+│   ├── Onboarding.js
+│   ├── Login.js
+│   └── Register.js
+├── services/
+│   ├── firebase.js
+│   ├── imageProcessor.js      # Background removal + Base64 storage
+│   ├── analyticsLogic.js
+│   └── dynamicOptions.js
+└── utils/
+    ├── constants.js
+    └── currency.js
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Environment Variables
 
-## Learn More
+| Variable | Description |
+|---|---|
+| `REACT_APP_REMOVE_BG_KEY` | remove.bg API key for background removal |
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+> Never commit `.env` to version control.
