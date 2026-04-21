@@ -2,15 +2,13 @@ import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import { seedWardrobe } from '../utils/seedWardrobe';
 
 const Dashboard = () => {
   const [userName, setUserName] = useState('');
-  const [stats, setStats] = useState({
-    totalItems: 0,
-    wornThisWeek: 0,
-    utilization: 0
-  });
+  const [stats, setStats] = useState({ totalItems: 0, wornThisWeek: 0, utilization: 0 });
   const [notifications, setNotifications] = useState([]);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -123,6 +121,30 @@ const Dashboard = () => {
               <span>Analytics</span>
             </Link>
           </nav>
+
+          {stats.totalItems === 0 && (
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                Your wardrobe is empty. Load 100 sample items to try mix & match recommendations.
+              </p>
+              <button
+                className="dash-action-btn"
+                style={{ display: 'inline-flex', cursor: 'pointer', border: 'none' }}
+                disabled={seeding}
+                onClick={async () => {
+                  if (!window.confirm('This will replace your wardrobe with 100 sample items. Continue?')) return;
+                  setSeeding(true);
+                  const result = await seedWardrobe();
+                  alert(result.message);
+                  setSeeding(false);
+                  window.location.reload();
+                }}
+              >
+                <span className="dash-action-icon">🌱</span>
+                <span>{seeding ? 'Loading...' : 'Load 100 Sample Items'}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

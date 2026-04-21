@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar } from 'react-chartjs-2';
 import { identifyUnderutilized, calculateAdjustedCostPerWear } from '../services/analyticsLogic';
 import { formatINR } from '../utils/currency';
+import { updateAnalyticsSummary } from '../services/userDataService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -24,6 +25,8 @@ const Analytics = () => {
       const under = identifyUnderutilized(items, 30);
       setUnderutilized(under);
       setLoading(false);
+      // Update analytics summary in Firestore
+      updateAnalyticsSummary(items).catch(() => {});
     };
     load();
   }, [userId]);

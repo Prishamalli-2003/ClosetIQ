@@ -82,19 +82,43 @@ export const identifyUnderutilized = (items, thresholdDays = 30) => {
 
 export const detectRedundancy = (items, newItem) => {
   const newPrice = Number(newItem.price) || 0;
-  const priceWindow = Math.max(500, newPrice * 0.15); // INR-aware window
-  const similarItems = items.filter(item => 
-    item.category === newItem.category &&
-    item.color === newItem.color &&
-    Math.abs((item.purchasePrice ?? item.price ?? 0) - newPrice) < priceWindow
-  );
-  
+  const newName = (newItem.name || '').toLowerCase().trim();
+  const newCategory = newItem.category || '';
+  const newColor = newItem.color || '';
+
+  const similarItems = items.filter(item => {
+    const itemName = (item.name || '').toLowerCase().trim();
+    const itemPrice = Number(item.purchasePrice ?? item.price ?? 0);
+    const priceWindow = Math.max(500, newPrice * 0.25);
+
+    // Exact or near-exact name match
+    const nameMatch = newName.length > 2 && (
+      itemName === newName ||
+      itemName.includes(newName) ||
+      newName.includes(itemName) ||
+      // word overlap — 2+ shared words
+      newName.split(' ').filter(w => w.length > 2 && itemName.includes(w)).length >= 2
+    );
+
+    // Same category + same color
+    const categoryColorMatch = item.category === newCategory && item.color === newColor;
+
+    // Same category + similar price (within 25%)
+    const categoryPriceMatch = item.category === newCategory &&
+      newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow;
+
+    return nameMatch || categoryColorMatch || categoryPriceMatch;
+  });
+
+  // Deduplicate
+  const unique = [...new Map(similarItems.map(i => [i.id, i])).values()];
+
   return {
-    similarCount: similarItems.length,
-    items: similarItems,
-    recommendation: similarItems.length >= 3 ? 
-      "You already have similar items. Consider if this is necessary." : 
-      "This could be a good addition to your wardrobe."
+    similarCount: unique.length,
+    items: unique,
+    recommendation: unique.length >= 1
+      ? 'You already have similar items. Consider if this is necessary.'
+      : 'This could be a good addition to your wardrobe.',
   };
 };
 

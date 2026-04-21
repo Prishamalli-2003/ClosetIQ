@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../services/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { auth } from '../services/firebase';
+import { saveOnboardingData } from '../services/userDataService';
 import {
   COLORS,
   COLOR_PALETTE,
@@ -45,26 +45,8 @@ const Onboarding = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) return;
-      const userRef = doc(db, 'users', userId);
-      // Use setDoc(merge:true) so fields/collections are created automatically if missing
-      await setDoc(
-        userRef,
-        {
-          onboardingComplete: true,
-          preferences: {
-            gender: preferences.gender || null,
-            favoriteColors: preferences.favoriteColors,
-            stylePreferences: preferences.stylePreferences,
-            comfortLevel: preferences.comfortLevel || null,
-            bodyType: preferences.bodyType || null,
-            favoriteSpots: preferences.favoriteSpots || [],
-            outfitOpinions: preferences.outfitOpinions || {},
-          },
-        },
-        { merge: true }
-      );
+      if (!auth.currentUser?.uid) return;
+      await saveOnboardingData(preferences);
       navigate('/dashboard');
     } catch (err) {
       console.error(err);

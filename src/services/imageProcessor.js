@@ -10,7 +10,6 @@ const REMOVE_BG_API_KEY = process.env.REACT_APP_REMOVE_BG_KEY || '';
 
 const MAX_SIZE = 500;
 const QUALITY  = 0.85;
-const MIME     = 'image/jpeg';
 
 const looksLikeImage = (file) => {
   if (!file) return false;

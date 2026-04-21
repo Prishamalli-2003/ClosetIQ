@@ -8,6 +8,7 @@ import ColorPalettePicker from '../components/ColorPalettePicker';
 import DeletionSuggestions from '../components/DeletionSuggestions';
 import { formatINR } from '../utils/currency';
 import GhostMannequinPlaceholder from '../components/GhostMannequinPlaceholder';
+import { savePurchaseDecision } from '../services/userDataService';
 
 const PurchaseSupport = () => {
   const [newItem, setNewItem] = useState({
@@ -30,10 +31,7 @@ const PurchaseSupport = () => {
     );
   }, [userId]);
 
-  // Try Storage first, fall back to Base64
-  const getImageUrl = async (file, base64) => {
-    return base64; // Storage not available — use Base64 directly
-  };
+  // getImageUrl removed — using Base64 directly
 
   const handleImagePicked = async (e) => {
     const file = e.target.files?.[0];
@@ -61,15 +59,30 @@ const PurchaseSupport = () => {
     const costPerWear = calculateSmartCostPerWear(newItem.price ?? 0, 0, newItem.category);
     let recommendation = 'BUY - This adds variety to your wardrobe';
     let reasoning = 'This item adds diversity and can match your style profile.';
-    if (redundancyResult.similarCount >= 3) {
-      recommendation = "DON'T BUY - You have too many similar items";
-      reasoning = 'You already own similar items that are underutilized. Consider decluttering first.';
-    } else if (redundancyResult.similarCount >= 2) {
-      recommendation = 'MAYBE - Consider if you really need this';
-      reasoning = 'You have some similar items. Make sure this adds unique value to your wardrobe.';
+
+    if (redundancyResult.similarCount >= 2) {
+      recommendation = "DON'T BUY - You already own this";
+      reasoning = `You have ${redundancyResult.similarCount} very similar items already. Buying this would be a duplicate purchase.`;
+    } else if (redundancyResult.similarCount === 1) {
+      recommendation = "MAYBE - You have something similar";
+      const similar = redundancyResult.items[0];
+      reasoning = `You already own "${similar?.name || 'a similar item'}" (${similar?.color || ''}, ₹${similar?.purchasePrice || 0}). Check if this adds enough difference to justify the purchase.`;
     }
+
     setAnalysis({ ...redundancyResult, costPerWear, recommendation, reasoning });
-    setShowAddToWardrobe(recommendation.includes('BUY'));
+    setShowAddToWardrobe(recommendation.startsWith('BUY'));
+
+    // Save decision to Firestore
+    savePurchaseDecision({
+      itemName: newItem.name,
+      category: newItem.category,
+      color: newItem.color,
+      price: newItem.price,
+      recommendation,
+      similarCount: redundancyResult.similarCount,
+      similarItems: redundancyResult.items,
+      addedToWardrobe: false,
+    }).catch(() => {});
   };
 
   const handleDeleteItem = async (itemId) => {

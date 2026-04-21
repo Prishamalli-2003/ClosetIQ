@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { OCCASIONS, MOODS } from '../utils/constants';
 import { getUserCustomOptions, addCustomMood, addCustomOccasion } from '../services/dynamicOptions';
 import CustomDropdown from '../components/CustomDropdown';
 import { format } from 'date-fns';
 import { prepareImageForUpload } from '../services/imageProcessor';
 import GhostMannequinPlaceholder from '../components/GhostMannequinPlaceholder';
+import { saveOutfitLog, logWear, updateAnalyticsSummary } from '../services/userDataService';
 
 const OutfitLog = () => {
   const [wardrobe, setWardrobe] = useState([]);
@@ -125,55 +126,50 @@ const OutfitLog = () => {
     }
     setSubmitting(true);
     try {
-      const logsRef = collection(db, 'users', userId, 'outfitLogs');
       let outfitImageUrl = '';
       if (photoFile) {
-        // photoFile is now a Base64 string — no Storage upload needed
         outfitImageUrl = photoFile;
       }
-      await addDoc(logsRef, {
-        date,
-        occasion,
-        mood,
+
+      // Save outfit log with full metadata to Firestore
+      await saveOutfitLog({
+        date, occasion, mood,
         itemIds: selectedIds,
         description: description.trim() || null,
         brand: brand.trim() || null,
         price: price ? parseFloat(price) : 0,
         outfitType,
         imageUrl: outfitImageUrl || null,
-        createdAt: serverTimestamp(),
-      });
+      }, wardrobe);
+
+      // Update wear count for each selected item
       for (const itemId of selectedIds) {
-        const item = wardrobe.find((w) => w.id === itemId);
-        const wearCount = (item?.wearCount ?? 0) + 1;
-        await updateDoc(doc(db, 'users', userId, 'wardrobe', itemId), {
-          wearCount,
-          lastWorn: date,
-        });
+        await logWear(itemId, date);
       }
+
+      // Refresh wardrobe and update analytics summary
+      const wardrobeRef = collection(db, 'users', userId, 'wardrobe');
+      const snap = await getDocs(wardrobeRef);
+      const updatedWardrobe = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setWardrobe(updatedWardrobe);
+
+      // Recompute analytics in background
+      const logsSnap = await getDocs(collection(db, 'users', userId, 'outfitLogs'));
+      const logs = logsSnap.docs.map((d) => d.data());
+      updateAnalyticsSummary(updatedWardrobe, logs).catch(() => {});
       setSelectedIds([]);
       setPhotoFile(null);
-      setPhotoPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return '';
-      });
+      setPhotoPreviewUrl('');
       setDescription('');
       setPrice('');
       setBrand('');
       setOutfitType('top');
-      setRecentLogs((prev) => [
-        { date, occasion, mood, itemIds: selectedIds },
-        ...prev.slice(0, 9),
-      ]);
-      const wardrobeRef = collection(db, 'users', userId, 'wardrobe');
-      const snap = await getDocs(wardrobeRef);
-      setWardrobe(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setRecentLogs((prev) => [{ date, occasion, mood, itemIds: selectedIds }, ...prev.slice(0, 9)]);
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to log outfit');
     } finally {
       setSubmitting(false);
-      setPhotoUploading(false);
     }
   };
 
