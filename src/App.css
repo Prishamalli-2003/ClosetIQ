@@ -2059,3 +2059,131 @@ body {
     font-size: 2rem;
   }
 }
+
+/* ============================================================
+   RECOMMENDATION CARDS
+   ============================================================ */
+.recommendations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0 1rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.recommendation-card {
+  background: rgba(255,255,255,0.13);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.rec-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.rec-card-number {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.rec-items-grid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rec-item-tile {
+  flex: 1;
+  min-width: 110px;
+  max-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rec-item-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rec-item-img-wrap {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.rec-item-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rec-item-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.rec-item-name {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.rec-item-meta {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.72rem;
+  text-align: center;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.rec-explanation-box {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.08);
+  border-left: 3px solid #667eea;
+  border-radius: 0 8px 8px 0;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .rec-items-grid {
+    gap: 0.6rem;
+  }
+  .rec-item-tile {
+    min-width: 80px;
+    max-width: 100px;
+  }
+  .rec-item-name {
+    font-size: 0.72rem;
+  }
+}

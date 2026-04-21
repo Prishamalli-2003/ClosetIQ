@@ -122,29 +122,29 @@ const Dashboard = () => {
             </Link>
           </nav>
 
-          {stats.totalItems === 0 && (
-            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-              <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                Your wardrobe is empty. Load 100 sample items to try mix & match recommendations.
+          {/* Seed data button — always visible */}
+          <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.08)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <p style={{ color: 'white', fontWeight: 600, margin: 0, fontSize: '0.95rem' }}>🌱 Sample Wardrobe Data</p>
+              <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0.25rem 0 0', fontSize: '0.82rem' }}>
+                Load 70 sample items to test outfit recommendations
               </p>
-              <button
-                className="dash-action-btn"
-                style={{ display: 'inline-flex', cursor: 'pointer', border: 'none' }}
-                disabled={seeding}
-                onClick={async () => {
-                  if (!window.confirm('This will replace your wardrobe with 100 sample items. Continue?')) return;
-                  setSeeding(true);
-                  const result = await seedWardrobe();
-                  alert(result.message);
-                  setSeeding(false);
-                  window.location.reload();
-                }}
-              >
-                <span className="dash-action-icon">🌱</span>
-                <span>{seeding ? 'Loading...' : 'Load 100 Sample Items'}</span>
-              </button>
             </div>
-          )}
+            <button
+              style={{ background: 'white', color: '#667eea', border: 'none', borderRadius: '10px', padding: '0.6rem 1.25rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              disabled={seeding}
+              onClick={async () => {
+                if (!window.confirm('This will REPLACE your current wardrobe with sample items. Continue?')) return;
+                setSeeding(true);
+                const result = await seedWardrobe();
+                alert(result.message);
+                setSeeding(false);
+                window.location.reload();
+              }}
+            >
+              {seeding ? '⏳ Loading...' : '🔄 Load Sample Items'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,118 +1,49 @@
+const ItemTile = ({ label, item }) => {
+  if (!item) return null;
+  return (
+    <div className="rec-item-tile">
+      <span className="rec-item-label">{label}</span>
+      <div className="rec-item-img-wrap">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div className="rec-item-fallback" style={{ display: item.imageUrl ? 'none' : 'flex' }}>
+          {item.name}
+        </div>
+      </div>
+      <p className="rec-item-name">{item.name}</p>
+      <p className="rec-item-meta">{item.color} · {item.brand || ''}</p>
+    </div>
+  );
+};
+
 const RecommendationCard = ({ recommendation, index }) => {
   const { top, bottom, dress, traditional, outerwear, explanation } = recommendation || {};
 
   return (
     <div className="recommendation-card">
-      {index && (
-        <div style={{
-          position: 'absolute',
-          top: '1rem',
-          right: '1rem',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 'bold',
-          fontSize: '1.2rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}>
-          {index}
-        </div>
-      )}
-      <div className="rec-items">
-        {/* Dress (standalone outfit) */}
-        {dress && (
-          <div className="rec-item">
-            <span className="rec-label">👗 Dress</span>
-            {dress.imageUrl ? (
-              <img src={dress.imageUrl} alt={dress.name} />
-            ) : (
-              <div className="placeholder">{dress.name}</div>
-            )}
-            <p><strong>{dress.name}</strong></p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-              {dress.color} • {dress.brand || 'No brand'}
-            </p>
-          </div>
-        )}
-
-        {/* Traditional wear (standalone outfit) */}
-        {traditional && (
-          <div className="rec-item">
-            <span className="rec-label">🥻 Traditional</span>
-            {traditional.imageUrl ? (
-              <img src={traditional.imageUrl} alt={traditional.name} />
-            ) : (
-              <div className="placeholder">{traditional.name}</div>
-            )}
-            <p><strong>{traditional.name}</strong></p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-              {traditional.color} • {traditional.brand || 'No brand'}
-            </p>
-          </div>
-        )}
-
-        {/* Top + Bottom combination */}
-        {top && (
-          <div className="rec-item">
-            <span className="rec-label">👕 Top</span>
-            {top.imageUrl ? (
-              <img src={top.imageUrl} alt={top.name} />
-            ) : (
-              <div className="placeholder">{top.name}</div>
-            )}
-            <p><strong>{top.name}</strong></p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-              {top.color} • {top.brand || 'No brand'}
-            </p>
-          </div>
-        )}
-        {bottom && (
-          <div className="rec-item">
-            <span className="rec-label">👖 Bottom</span>
-            {bottom.imageUrl ? (
-              <img src={bottom.imageUrl} alt={bottom.name} />
-            ) : (
-              <div className="placeholder">{bottom.name}</div>
-            )}
-            <p><strong>{bottom.name}</strong></p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-              {bottom.color} • {bottom.brand || 'No brand'}
-            </p>
-          </div>
-        )}
-
-        {/* Outerwear (optional for all outfit types) */}
-        {outerwear && (
-          <div className="rec-item">
-            <span className="rec-label">🧥 Outerwear</span>
-            {outerwear.imageUrl ? (
-              <img src={outerwear.imageUrl} alt={outerwear.name} />
-            ) : (
-              <div className="placeholder">{outerwear.name}</div>
-            )}
-            <p><strong>{outerwear.name}</strong></p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.8 }}>
-              {outerwear.color} • {outerwear.brand || 'No brand'}
-            </p>
-          </div>
-        )}
+      <div className="rec-card-header">
+        <span className="rec-card-number">Outfit {index}</span>
       </div>
+
+      <div className="rec-items-grid">
+        <ItemTile label="👗 Dress"       item={dress} />
+        <ItemTile label="🥻 Traditional" item={traditional} />
+        <ItemTile label="👕 Top"         item={top} />
+        <ItemTile label="👖 Bottom"      item={bottom} />
+        <ItemTile label="🧥 Outerwear"   item={outerwear} />
+      </div>
+
       {explanation && (
-        <div style={{
-          marginTop: '1rem',
-          padding: '0.75rem',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '8px',
-          borderLeft: '3px solid #667eea'
-        }}>
-          <p className="rec-explanation" style={{ margin: 0, fontSize: '0.9rem' }}>
-            💡 {explanation}
-          </p>
+        <div className="rec-explanation-box">
+          💡 {explanation}
         </div>
       )}
     </div>
