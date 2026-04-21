@@ -9,10 +9,18 @@ const ClothingItem = ({ item, id, onDelete }) => {
     <div className="clothing-item-card">
       <div className="clothing-item-image">
         {imageUrl ? (
-          <img src={imageUrl} alt={name || 'Clothing'} />
-        ) : (
-          <div className="placeholder">No image</div>
-        )}
+          <img
+            src={imageUrl}
+            alt={name || 'Clothing'}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div className="placeholder" style={{ display: imageUrl ? 'none' : 'flex' }}>
+          {name || category}
+        </div>
       </div>
       <div className="clothing-item-info">
         <h3>{name || 'Unnamed item'}</h3>
