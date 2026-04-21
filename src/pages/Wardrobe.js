@@ -7,6 +7,7 @@ import DeletionSuggestions from "../components/DeletionSuggestions";
 import { CLOTHING_CATEGORIES, CLOTHING_TYPES } from "../utils/constants";
 import ColorPalettePicker from "../components/ColorPalettePicker";
 import GhostMannequinPlaceholder from "../components/GhostMannequinPlaceholder";
+import PageHeader from "../components/PageHeader";
 
 const Wardrobe = () => {
   const [items, setItems] = useState([]);
@@ -83,10 +84,11 @@ const Wardrobe = () => {
     <div className="page-wrapper">
       {saving && <div className="upload-overlay"><div className="upload-spinner" /><p>Saving...</p></div>}
       <div className="page-card">
-        <div className="page-card-header">
-          <h1 className="page-title">My Wardrobe <span style={{fontSize:"0.85rem",opacity:0.7,fontWeight:400}}>({items.length} items)</span></h1>
+        <PageHeader title="👗 {name}'s Wardrobe" subtitle={`${items.length} items in your collection`} />
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
           <button type="button" className={showAdd ? "btn-pill btn-pill--cancel" : "btn-pill btn-pill--primary"} onClick={() => setShowAdd(!showAdd)}>
-            {showAdd ? "Cancel" : "+ Add Item"}
+            {showAdd ? "✕ Cancel" : "+ Add Item"}
           </button>
         </div>
 

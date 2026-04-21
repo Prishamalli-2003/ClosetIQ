@@ -124,7 +124,7 @@ const Profile = () => {
                   <option value="other">Non-binary / Other</option>
                 </select>
               ) : (
-                <p style={{ color: 'white', margin: 0, padding: '0.75rem 0', textTransform: 'capitalize' }}>{profile.gender || '—'}</p>
+                <p style={{ color: 'white', margin: 0, padding: '0.75rem 0', textTransform: 'capitalize' }}>{profile.gender || 'Not set — click Edit to update'}</p>
               )}
             </div>
             <div className="form-group">

@@ -2187,3 +2187,30 @@ body {
     font-size: 0.72rem;
   }
 }
+
+/* ============================================================
+   PAGE HEADER WITH USERNAME + MOTIVATIONAL QUOTE
+   ============================================================ */
+.page-header-block {
+  margin-bottom: 1.5rem;
+}
+
+.page-header-quote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255,255,255,0.1);
+  border-left: 3px solid rgba(255,255,255,0.4);
+  border-radius: 0 10px 10px 0;
+  color: rgba(255,255,255,0.82);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.quote-icon {
+  flex-shrink: 0;
+  font-style: normal;
+}

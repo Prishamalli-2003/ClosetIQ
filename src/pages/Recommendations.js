@@ -6,6 +6,7 @@ import RecommendationCard from '../components/RecommendationCard';
 import { OCCASIONS, MOODS } from '../utils/constants';
 import CustomDropdown from '../components/CustomDropdown';
 import useUserProfile from '../services/useUserProfile';
+import PageHeader from '../components/PageHeader';
 
 const Recommendations = () => {
   const { firstName } = useUserProfile();
@@ -89,10 +90,7 @@ const Recommendations = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">✨ {firstName ? `${firstName}'s ` : ''}Outfit Recommendations</h1>
-          <p className="form-subtitle">
-            Customize your preferences to get 5 smart, personalized outfit suggestions
-          </p>
+          <PageHeader title="✨ {name}'s Outfit Recommendations" subtitle="Customize your preferences to get 5 smart, personalized outfit suggestions" />
 
           <div className="form-grid">
             {/* Occasion */}

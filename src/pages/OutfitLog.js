@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { prepareImageForUpload } from '../services/imageProcessor';
 import GhostMannequinPlaceholder from '../components/GhostMannequinPlaceholder';
 import { saveOutfitLog, logWear, updateAnalyticsSummary } from '../services/userDataService';
+import PageHeader from '../components/PageHeader';
 
 const OutfitLog = () => {
   const [wardrobe, setWardrobe] = useState([]);
@@ -177,10 +178,7 @@ const OutfitLog = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">📝 Log Today's Outfit</h1>
-          <p className="form-subtitle">
-            Capture what you wore so ClosetIQ can help you avoid repeats and suggest new combos
-          </p>
+          <PageHeader title="📝 {name}'s Outfit Log" subtitle="Capture what you wore so ClosetIQ can help you avoid repeats and suggest new combos" />
 
           <form onSubmit={handleSubmit}>
             <div className="form-grid single-column">

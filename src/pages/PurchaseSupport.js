@@ -9,6 +9,7 @@ import DeletionSuggestions from '../components/DeletionSuggestions';
 import { formatINR } from '../utils/currency';
 import GhostMannequinPlaceholder from '../components/GhostMannequinPlaceholder';
 import { savePurchaseDecision } from '../services/userDataService';
+import PageHeader from '../components/PageHeader';
 
 const PurchaseSupport = () => {
   const [newItem, setNewItem] = useState({
@@ -124,8 +125,7 @@ const PurchaseSupport = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">🛒 Purchase Decision Support</h1>
-          <p className="form-subtitle">Check if a potential purchase overlaps your wardrobe.</p>
+          <PageHeader title="🛒 {name}'s Purchase Decisions" subtitle="Check if a potential purchase overlaps your wardrobe." />
 
           <DeletionSuggestions items={wardrobe} onDeleteItem={handleDeleteItem} maxItems={40} />
 

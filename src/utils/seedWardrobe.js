@@ -21,7 +21,7 @@ export const FEMALE_ITEMS = [
   { name: "Burgundy Turtleneck",       category: "top", type: "sweater",   color: "burgundy", purchasePrice: 4999, size: "M", brand: "Zara",           imageUrl: U("1608744882201-52a7f7f3dd60") },
   { name: "Lavender Crop Sweater",     category: "top", type: "sweater",   color: "lavender", purchasePrice: 3499, size: "S", brand: "Mango",          imageUrl: U("1620799140408-edc6dcb6d633") },
   { name: "White Camisole",            category: "top", type: "camisole",  color: "white",    purchasePrice: 999,  size: "S", brand: "H&M",            imageUrl: U("1503342217505-b0a15ec3261c") },
-  { name: "Olive Green Tank Top",      category: "top", type: "tank",      color: "olive",    purchasePrice: 1199, size: "M", brand: "H&M",            imageUrl: U("1503341504253-dff4815485f1") },
+  { name: "Olive Green Tank Top",      category: "top", type: "tank",      color: "olive",    purchasePrice: 1199, size: "M", brand: "H&M",            imageUrl: U("1503342217505-b0a15ec3261c") },
   { name: "Teal Printed Blouse",       category: "top", type: "blouse",    color: "teal",     purchasePrice: 2599, size: "S", brand: "W",              imageUrl: U("1485462537746-965f33f7f6a7") },
 
   // BOTTOMS
@@ -58,7 +58,7 @@ export const FEMALE_ITEMS = [
 
   // OUTERWEAR
   { name: "Black Leather Jacket",      category: "outerwear", type: "jacket",   color: "black", purchasePrice: 12999, size: "M", brand: "Zara",           imageUrl: U("1551028719-00167b16eac5") },
-  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",     color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",          imageUrl: U("1539533018447-63fcce2678e3") },
+  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",     color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",          imageUrl: U("1548624313-0396c75e4b1a") },
   { name: "Navy Blazer",               category: "outerwear", type: "blazer",   color: "navy",  purchasePrice: 8999,  size: "M", brand: "Van Heusen",     imageUrl: U("1507679799987-c73779587ccf") },
   { name: "Denim Jacket",              category: "outerwear", type: "jacket",   color: "blue",  purchasePrice: 5999,  size: "M", brand: "Levis",          imageUrl: U("1523205771623-e0faa4d2813d") },
   { name: "White Blazer",              category: "outerwear", type: "blazer",   color: "white", purchasePrice: 7999,  size: "M", brand: "Zara",           imageUrl: U("1593030761757-71fae45fa0e7") },
@@ -109,7 +109,7 @@ export const MALE_ITEMS = [
 
   // OUTERWEAR
   { name: "Black Leather Jacket",      category: "outerwear", type: "jacket",  color: "black", purchasePrice: 12999, size: "M", brand: "Zara",       imageUrl: U("1551028719-00167b16eac5") },
-  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",    color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",      imageUrl: U("1539533018447-63fcce2678e3") },
+  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",    color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",      imageUrl: U("1548624313-0396c75e4b1a") },
   { name: "Navy Blazer",               category: "outerwear", type: "blazer",  color: "navy",  purchasePrice: 8999,  size: "M", brand: "Van Heusen", imageUrl: U("1507679799987-c73779587ccf") },
   { name: "Grey Wool Coat",            category: "outerwear", type: "coat",    color: "gray",  purchasePrice: 18999, size: "M", brand: "Marks & Spencer",imageUrl: U("1548624313-0396c75e4b1a") },
   { name: "Denim Jacket",              category: "outerwear", type: "jacket",  color: "blue",  purchasePrice: 5999,  size: "M", brand: "Levis",      imageUrl: U("1523205771623-e0faa4d2813d") },

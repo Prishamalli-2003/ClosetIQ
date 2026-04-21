@@ -7,6 +7,7 @@ import { identifyUnderutilized, calculateAdjustedCostPerWear } from '../services
 import { formatINR } from '../utils/currency';
 import { updateAnalyticsSummary } from '../services/userDataService';
 import useUserProfile from '../services/useUserProfile';
+import PageHeader from '../components/PageHeader';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -98,8 +99,7 @@ const Analytics = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">📊 {firstName ? `${firstName}'s ` : ''}Analytics</h1>
-          <p className="form-subtitle">Rule-based insights: utilization and cost per wear.</p>
+          <PageHeader title="📊 {name}'s Analytics" subtitle="Rule-based insights: utilization and cost per wear." />
 
           <div className="analytics-grid analytics-grid-themed">
             <div className="analytics-panel">
