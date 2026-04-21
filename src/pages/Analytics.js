@@ -6,6 +6,7 @@ import { Bar } from 'react-chartjs-2';
 import { identifyUnderutilized, calculateAdjustedCostPerWear } from '../services/analyticsLogic';
 import { formatINR } from '../utils/currency';
 import { updateAnalyticsSummary } from '../services/userDataService';
+import useUserProfile from '../services/useUserProfile';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -13,7 +14,7 @@ const Analytics = () => {
   const [wardrobe, setWardrobe] = useState([]);
   const [underutilized, setUnderutilized] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const { firstName } = useUserProfile();
   const userId = auth.currentUser?.uid;
 
   useEffect(() => {
@@ -97,7 +98,7 @@ const Analytics = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">📊 Analytics</h1>
+          <h1 className="form-title">📊 {firstName ? `${firstName}'s ` : ''}Analytics</h1>
           <p className="form-subtitle">Rule-based insights: utilization and cost per wear.</p>
 
           <div className="analytics-grid analytics-grid-themed">

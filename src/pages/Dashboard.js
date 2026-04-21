@@ -1,26 +1,17 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { seedWardrobe } from '../utils/seedWardrobe';
+import useUserProfile from '../services/useUserProfile';
 
 const Dashboard = () => {
-  const [userName, setUserName] = useState('');
+  const { firstName, gender } = useUserProfile();
   const [stats, setStats] = useState({ totalItems: 0, wornThisWeek: 0, utilization: 0 });
   const [notifications, setNotifications] = useState([]);
   const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    // Read name from Firestore user doc
-    getDoc(doc(db, 'users', userId)).then((snap) => {
-      const data = snap.data();
-      const name = data?.name || '';
-      setUserName(name.trim().split(' ')[0]); // first name only
-    });
-
     fetchUserData();
   }, []);
 
@@ -70,7 +61,9 @@ const Dashboard = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card dashboard-form-card">
-          <h1 className="form-title">🎉 Hello, {userName || 'there'}!</h1>
+          <h1 className="form-title">
+            {gender === 'female' ? '👩' : gender === 'male' ? '👨' : '🎉'} Hello, {firstName || 'there'}!
+          </h1>
           <p className="form-subtitle">Welcome back to ClosetIQ – your smart wardrobe companion.</p>
 
           {notifications.length > 0 && (

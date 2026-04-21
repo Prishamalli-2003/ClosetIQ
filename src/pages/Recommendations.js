@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { generateOutfitRecommendations } from '../services/analyticsLogic';
 import RecommendationCard from '../components/RecommendationCard';
 import { OCCASIONS, MOODS } from '../utils/constants';
 import CustomDropdown from '../components/CustomDropdown';
+import useUserProfile from '../services/useUserProfile';
 
 const Recommendations = () => {
+  const { firstName } = useUserProfile();
   const [wardrobe, setWardrobe] = useState([]);
   const [preferences, setPreferences] = useState({});
   const [recommendations, setRecommendations] = useState([]);
@@ -87,7 +89,7 @@ const Recommendations = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">✨ Outfit Recommendations</h1>
+          <h1 className="form-title">✨ {firstName ? `${firstName}'s ` : ''}Outfit Recommendations</h1>
           <p className="form-subtitle">
             Customize your preferences to get 5 smart, personalized outfit suggestions
           </p>

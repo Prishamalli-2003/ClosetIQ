@@ -177,7 +177,7 @@ const OutfitLog = () => {
     <div className="recommendations-page">
       <div className="form-container">
         <div className="form-card">
-          <h1 className="form-title">📝 Log Today&apos;s Outfit</h1>
+          <h1 className="form-title">📝 Log Today's Outfit</h1>
           <p className="form-subtitle">
             Capture what you wore so ClosetIQ can help you avoid repeats and suggest new combos
           </p>
