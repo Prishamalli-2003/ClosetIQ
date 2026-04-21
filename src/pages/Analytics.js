@@ -50,9 +50,14 @@ const Analytics = () => {
       {
         label: 'Items per category',
         data: Object.values(byCategory),
-        backgroundColor: 'rgba(102, 126, 234, 0.6)',
-        borderColor: 'rgba(102, 126, 234, 1)',
-        borderWidth: 1,
+        backgroundColor: [
+          'rgba(102,126,234,0.8)', 'rgba(118,75,162,0.8)', 'rgba(240,93,251,0.8)',
+          'rgba(16,185,129,0.8)', 'rgba(245,158,11,0.8)', 'rgba(239,68,68,0.8)',
+          'rgba(59,130,246,0.8)',
+        ],
+        borderColor: 'rgba(255,255,255,0.8)',
+        borderWidth: 2,
+        borderRadius: 6,
       },
     ],
   };
@@ -63,9 +68,10 @@ const Analytics = () => {
       {
         label: 'Wear count',
         data: wearCountData.map((i) => i.wearCount ?? 0),
-        backgroundColor: 'rgba(118, 75, 162, 0.6)',
-        borderColor: 'rgba(118, 75, 162, 1)',
-        borderWidth: 1,
+        backgroundColor: 'rgba(118,75,162,0.8)',
+        borderColor: 'rgba(118,75,162,1)',
+        borderWidth: 2,
+        borderRadius: 6,
       },
     ],
   };
@@ -74,10 +80,18 @@ const Analytics = () => {
     responsive: true,
     plugins: {
       legend: { display: false },
-      title: { display: true, text: 'Wardrobe by category' },
+      title: { display: false },
     },
     scales: {
-      y: { beginAtZero: true, ticks: { stepSize: 1 } },
+      y: {
+        beginAtZero: true,
+        ticks: { stepSize: 1, color: '#374151', font: { family: 'Inter', size: 12 } },
+        grid: { color: 'rgba(0,0,0,0.06)' },
+      },
+      x: {
+        ticks: { color: '#374151', font: { family: 'Inter', size: 12 } },
+        grid: { display: false },
+      },
     },
   };
 
@@ -86,10 +100,18 @@ const Analytics = () => {
     indexAxis: 'y',
     plugins: {
       legend: { display: false },
-      title: { display: true, text: 'Top 10 most worn items' },
+      title: { display: false },
     },
     scales: {
-      x: { beginAtZero: true, ticks: { stepSize: 1 } },
+      x: {
+        beginAtZero: true,
+        ticks: { stepSize: 1, color: '#374151', font: { family: 'Inter', size: 12 } },
+        grid: { color: 'rgba(0,0,0,0.06)' },
+      },
+      y: {
+        ticks: { color: '#374151', font: { family: 'Inter', size: 11 } },
+        grid: { display: false },
+      },
     },
   };
 
@@ -101,12 +123,10 @@ const Analytics = () => {
         <div className="form-card">
           <PageHeader title="📊 {name}'s Analytics" subtitle="Rule-based insights: utilization and cost per wear." />
 
-          <div className="analytics-grid analytics-grid-themed">
+          <div className="analytics-grid">
             <div className="analytics-panel">
               <h2 className="analytics-panel-title">Wardrobe by category</h2>
-              <p className="analytics-panel-desc">
-                See where you may be overbuying (tall bars) or under-investing.
-              </p>
+              <p className="analytics-panel-desc">See where you may be overbuying (tall bars) or under-investing.</p>
               {Object.keys(byCategory).length === 0 ? (
                 <p className="empty-state">Add items in My Wardrobe to see charts.</p>
               ) : (
@@ -115,9 +135,7 @@ const Analytics = () => {
             </div>
             <div className="analytics-panel">
               <h2 className="analytics-panel-title">Most worn items</h2>
-              <p className="analytics-panel-desc">
-                Your real workhorses — repeat winners and pause on what you rarely wear.
-              </p>
+              <p className="analytics-panel-desc">Your real workhorses — repeat winners and pause on what you rarely wear.</p>
               {wearCountData.length === 0 ? (
                 <p className="empty-state">Log outfits to see wear counts.</p>
               ) : (
@@ -126,7 +144,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          <div className="analytics-panel analytics-panel-full underutilized-themed">
+          <div className="analytics-panel analytics-panel-full" style={{ marginTop: '1.5rem' }}>
             <h2 className="analytics-panel-title">Underutilized items</h2>
             <p className="analytics-panel-desc">Not worn in 30+ days and fewer than 3 wears — wear more or declutter.</p>
             {underutilized.length === 0 ? (

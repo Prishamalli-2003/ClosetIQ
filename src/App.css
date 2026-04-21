@@ -2388,3 +2388,69 @@ h1, h2, h3 {
 .analytics-panel-title {
   font-family: 'Playfair Display', serif;
 }
+
+/* ============================================================
+   ANALYTICS PAGE FIXES
+   ============================================================ */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.analytics-panel {
+  background: rgba(255,255,255,0.95);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.analytics-panel-title {
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.analytics-panel-desc {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.analytics-panel-full {
+  grid-column: 1 / -1;
+}
+
+.underutilized-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.underutilized-list li {
+  color: #374151;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(102,126,234,0.08);
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.empty-state {
+  color: #6b7280;
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
