@@ -1,4 +1,4 @@
-﻿import { collection, addDoc, getDocs, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -12,10 +12,133 @@ const HEX = {
   rust:"c2410c",emerald:"059669",
 };
 const fg = (c) => ["black","navy","maroon","burgundy","brown","purple","emerald","rust"].includes(c)?"ffffff":"1a1a1a";
-const img = (color, line1, line2) => {
+// Unsplash source API — returns best matching photo for the search term
+// Biased toward flat-lay/product shots with female clothing keywords
+const img = (color, itemName, description) => {
+  // Map item names to specific verified Unsplash photo IDs (no models)
+  const PHOTO_MAP = {
+    "Kanjivaram Silk Saree":       "1610030469983-98e550d6193c",
+    "Banarasi Brocade Saree":      "1609357605129-26f69add5d6e",
+    "Paithani Silk Saree":         "1583391733956-6c78276477e2",
+    "Chanderi Silk Saree":         "1614252235316-8c857d38b5f4",
+    "Mysore Silk Saree":           "1617627143750-d86bc21e42bb",
+    "Baluchari Silk Saree":        "1609357605129-26f69add5d6e",
+    "Tussar Silk Saree":           "1614252235316-8c857d38b5f4",
+    "Patola Silk Saree":           "1610030469983-98e550d6193c",
+    "Gadwal Silk Saree":           "1617627143750-d86bc21e42bb",
+    "Pochampally Ikat Saree":      "1583391733956-6c78276477e2",
+    "Cotton Printed Saree":        "1583391733956-6c78276477e2",
+    "Chiffon Saree":               "1617627143750-d86bc21e42bb",
+    "Georgette Saree":             "1614252235316-8c857d38b5f4",
+    "Cotton Tant Saree":           "1610030469983-98e550d6193c",
+    "Linen Saree":                 "1614252235316-8c857d38b5f4",
+    "Synthetic Silk Saree":        "1609357605129-26f69add5d6e",
+    "Khadi Cotton Saree":          "1610030469983-98e550d6193c",
+    "Printed Crepe Saree":         "1617627143750-d86bc21e42bb",
+    "Handloom Cotton Saree":       "1583391733956-6c78276477e2",
+    "Poly Silk Saree":             "1609357605129-26f69add5d6e",
+    "Gold Anarkali Gown":          "1617627143750-d86bc21e42bb",
+    "Royal Blue Anarkali":         "1609357605129-26f69add5d6e",
+    "Pink Sharara Gown":           "1583391733956-6c78276477e2",
+    "Maroon Lehenga Gown":         "1609357605129-26f69add5d6e",
+    "Teal Gharara Set":            "1614252235316-8c857d38b5f4",
+    "Cream Lucknowi Gown":         "1614252235316-8c857d38b5f4",
+    "Purple Silk Anarkali":        "1617627143750-d86bc21e42bb",
+    "Emerald Green Gown":          "1583391733956-6c78276477e2",
+    "Rust Orange Anarkali":        "1617627143750-d86bc21e42bb",
+    "Lavender Palazzo Gown":       "1585487000160-6ebcfceb0d03",
+    "Black Evening Gown":          "1595777457583-95e059d581b8",
+    "Red Cocktail Gown":           "1502716119720-b23a93e5fe1b",
+    "Navy Blue Ball Gown":         "1566174053879-31528523f8ae",
+    "Rose Gold Sequin Gown":       "1518611012118-696072aa579a",
+    "Emerald Satin Gown":          "1539008835657-9e8e9680c956",
+    "White Maxi Gown":             "1515372039744-b8f02a3ae446",
+    "Burgundy Velvet Gown":        "1550639525-c97d455acf70",
+    "Gold Shimmer Gown":           "1612336307429-8a898d10e223",
+    "Lavender Tulle Gown":         "1585487000160-6ebcfceb0d03",
+    "Coral Off-Shoulder Gown":     "1572804013309-59a88b7e92f1",
+    "White Cotton T-Shirt":        "1521572163474-6864f9cf17ab",
+    "Black V-Neck T-Shirt":        "1583743814966-8936f5b7be1a",
+    "Navy Striped T-Shirt":        "1562157873-818bc0726f68",
+    "Blush Pink Crop Top":         "1618354691373-d851c5c3a990",
+    "Yellow Crop Top":             "1554568218-0f1715e72254",
+    "Lavender Crop Top":           "1620799140408-edc6dcb6d633",
+    "White Linen Shirt":           "1596755094514-f87e34085b2c",
+    "Light Blue Oxford Shirt":     "1602810318383-e386cc2a3ccf",
+    "Beige Oversized Shirt":       "1598033129183-c4f50c736f10",
+    "Olive Green Shirt":           "1598033129183-c4f50c736f10",
+    "Striped Formal Shirt":        "1602810318383-e386cc2a3ccf",
+    "Black Satin Blouse":          "1564257631407-4deb1f99d992",
+    "Ivory Silk Blouse":           "1551163943-3f7253a97e52",
+    "Coral Floral Blouse":         "1572804013309-59a88b7e92f1",
+    "Teal Printed Blouse":         "1485462537746-965f33f7f6a7",
+    "Pink Floral Blouse":          "1572804013309-59a88b7e92f1",
+    "Mustard Peplum Blouse":       "1564257631407-4deb1f99d992",
+    "White Embroidered Blouse":    "1551163943-3f7253a97e52",
+    "Grey Marl Hoodie":            "1556821840-3a63f15732ce",
+    "Black Zip Hoodie":            "1509942774463-acf339cf87d5",
+    "Cream Knit Sweater":          "1576566588028-4147f3842f27",
+    "Burgundy Turtleneck":         "1608744882201-52a7f7f3dd60",
+    "Lavender Crop Sweater":       "1620799140408-edc6dcb6d633",
+    "Brown Knit Sweater":          "1576566588028-4147f3842f27",
+    "Mustard Knit Sweater":        "1576566588028-4147f3842f27",
+    "White Camisole":              "1503342217505-b0a15ec3261c",
+    "Black Camisole":              "1503342217505-b0a15ec3261c",
+    "Nude Camisole":               "1503342217505-b0a15ec3261c",
+    "Olive Green Tank Top":        "1503341504253-dff4815485f1",
+    "White Tank Top":              "1503341504253-dff4815485f1",
+    "Black Bodysuit":              "1618354691438-25bc04584c23",
+    "White Bodysuit":              "1618354691438-25bc04584c23",
+    "Red Polo Shirt":              "1571945153237-4929e783af4a",
+    "Navy Polo Shirt":             "1571945153237-4929e783af4a",
+    "Blue Skinny Jeans":           "1542272604-787c3835535d",
+    "Black Slim Jeans":            "1541099649105-f69ad21f3246",
+    "White Wide Leg Jeans":        "1594938298603-c8148c4b4357",
+    "Denim Mini Skirt":            "1583496661160-fb5886a0aaaa",
+    "Black Midi Skirt":            "1577900232427-18219b9166a0",
+    "Pink Pleated Skirt":          "1572804013427-4d7ca7268217",
+    "Mustard Midi Skirt":          "1572804013427-4d7ca7268217",
+    "Emerald Satin Skirt":         "1577900232427-18219b9166a0",
+    "Beige Chinos":                "1473966968600-fa801b869a1a",
+    "Black Leggings":              "1506629082955-511b1aa562c8",
+    "Navy Palazzo Pants":          "1509631179647-0177331693ae",
+    "Teal Palazzo":                "1509631179647-0177331693ae",
+    "Grey Joggers":                "1552902865-b72c031ac5ea",
+    "Navy Formal Trousers":        "1560243563-062bfc001d68",
+    "Black Formal Trousers":       "1624378439575-d8705ad7ae80",
+    "Cream Linen Trousers":        "1594938298603-c8148c4b4357",
+    "Burgundy Culottes":           "1509631179647-0177331693ae",
+    "Rust Flared Trousers":        "1594938298603-c8148c4b4357",
+    "Olive Cargo Pants":           "1517445312882-bc9910d016b7",
+    "White Shorts":                "1594938298603-c8148c4b4357",
+    "Black Leather Jacket":        "1551028719-00167b16eac5",
+    "Camel Trench Coat":           "1539533018447-63fcce2678e3",
+    "Navy Blazer":                 "1507679799987-c73779587ccf",
+    "White Blazer":                "1593030761757-71fae45fa0e7",
+    "Denim Jacket":                "1523205771623-e0faa4d2813d",
+    "Burgundy Cardigan":           "1434389677669-e08b4cac3105",
+    "Cream Shawl":                 "1434389677669-e08b4cac3105",
+    "Gold Dupatta Shawl":          "1434389677669-e08b4cac3105",
+    "White Sneakers":              "1542291026-7eec264c27ff",
+    "Black Ankle Boots":           "1543163521-1bf539c55dd2",
+    "Nude Block Heels":            "1515347619252-60a4bf4fff4f",
+    "Gold Strappy Sandals":        "1603487742131-4160ec999306",
+    "Black Ballet Flats":          "1560343090-f0409e92791a",
+    "Red Stilettos":               "1518049362265-d5b2a6467637",
+    "Black Leather Handbag":       "1548036328-c9fa89d128fa",
+    "Tan Tote Bag":                "1590874103328-eac38a683ce7",
+    "Gold Statement Necklace":     "1599643478518-a784e5dc4c8f",
+    "Rose Gold Watch":             "1523275335684-37898b6baf30",
+    "Silver Hoop Earrings":        "1535632066927-ab7c9ab60908",
+    "Beige Clutch Bag":            "1566150905458-1bf1fc113f0d",
+  };
+  const photoId = PHOTO_MAP[itemName];
+  if (photoId) {
+    return `https://images.unsplash.com/photo-${photoId}?w=400&h=500&fit=crop&q=80`;
+  }
+  // Fallback: color placeholder
   const bg = HEX[color] || "e5e7eb";
-  const text = encodeURIComponent(line2 ? line1 + "\n" + line2 : line1);
-  return `https://placehold.co/400x500/${bg}/${fg(color)}?text=${text}&font=playfair-display`;
+  return `https://placehold.co/400x500/${bg}/${fg(color)}?text=${encodeURIComponent(itemName)}`;
 };
 
 // ── 10 PREMIUM SAREES (₹5,000 – ₹1,50,000) ──────────────────────────────
