@@ -15,11 +15,16 @@ const useUserProfile = () => {
     getDoc(doc(db, 'users', userId)).then((snap) => {
       if (!snap.exists()) return;
       const data = snap.data();
-      const name = data?.name || '';
+      // Use saved name, fall back to email prefix, then Firebase displayName
+      const rawName = data?.name || auth.currentUser?.displayName || '';
+      const emailPrefix = (auth.currentUser?.email || '').split('@')[0];
+      const name = rawName || emailPrefix;
+      // Capitalise first letter
+      const cleanName = name.charAt(0).toUpperCase() + name.slice(1);
       const gender = data?.preferences?.gender || data?.gender || '';
       setProfile({
-        name,
-        firstName: name.trim().split(' ')[0],
+        name: cleanName,
+        firstName: cleanName.trim().split(' ')[0],
         gender,
       });
     });

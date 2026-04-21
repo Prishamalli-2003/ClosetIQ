@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { seedWardrobe } from '../utils/seedWardrobe';
 import useUserProfile from '../services/useUserProfile';
@@ -13,6 +13,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchUserData();
+    // Save name to Firestore if missing
+    const userId = auth.currentUser?.uid;
+    if (userId && auth.currentUser?.email && !auth.currentUser?.displayName) {
+      const emailPrefix = auth.currentUser.email.split('@')[0];
+      const capitalized = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+      updateDoc(doc(db, 'users', userId), { name: capitalized }).catch(() => {});
+    }
   }, []);
 
   const fetchUserData = async () => {

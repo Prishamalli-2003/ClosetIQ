@@ -24,12 +24,12 @@ const ProtectedRoute = ({ children }) => {
         const userRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userRef);
         if (!userDoc.exists()) {
-          // Auto-create user profile doc when missing (no manual Firestore setup needed)
+          // Auto-create user profile doc when missing
           await setDoc(
             userRef,
             {
               email: user.email || null,
-              name: user.displayName || null,
+              name: user.displayName || user.email?.split('@')[0] || null,
               createdAt: serverTimestamp(),
               onboardingComplete: false,
             },
@@ -37,7 +37,8 @@ const ProtectedRoute = ({ children }) => {
           );
         }
         const data = (await getDoc(userRef)).data();
-        if (!data?.onboardingComplete) {
+        // Only redirect to onboarding if explicitly false (not missing/undefined)
+        if (data?.onboardingComplete === false) {
           setStatus('onboarding');
           return;
         }
