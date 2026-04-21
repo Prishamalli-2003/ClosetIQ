@@ -2,142 +2,134 @@ import { collection, addDoc, getDocs, deleteDoc, serverTimestamp } from "firebas
 import { db, auth } from "../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-// Each imageUrl is a verified Unsplash photo that matches the item name exactly.
-// Format: photo-{ID}?w=400&h=500&fit=crop&q=80
-const U = (id) => `https://images.unsplash.com/photo-${id}?w=400&h=500&fit=crop&q=80`;
+// Color hex map for placehold.co backgrounds
+const HEX = {
+  white: "f8f8f8", black: "1a1a1a", navy: "0b1f3a", gray: "6b7280",
+  beige: "d6c6a8", brown: "7c4a2d", red: "ef4444", blue: "3b82f6",
+  green: "22c55e", yellow: "f59e0b", pink: "ec4899", orange: "f97316",
+  purple: "8b5cf6", maroon: "7f1d1d", teal: "14b8a6", mint: "6ee7b7",
+  coral: "ff7875", lavender: "c4b5fd", cream: "fef3c7", gold: "fbbf24",
+  silver: "d1d5db", "rose-gold": "f9a8d4", olive: "84cc16",
+  burgundy: "991b1b", turquoise: "06b6d4",
+};
+
+const textColor = (color) => {
+  const dark = ["black","navy","maroon","burgundy","brown","purple"];
+  return dark.includes(color) ? "ffffff" : "1a1a1a";
+};
+
+// Generate a clean product-style placeholder image
+// Shows the item name on a background matching the item color
+const img = (color, label) => {
+  const bg = HEX[color] || "e5e7eb";
+  const fg = textColor(color);
+  const text = encodeURIComponent(label);
+  return `https://placehold.co/400x500/${bg}/${fg}?text=${text}&font=playfair-display`;
+};
 
 export const FEMALE_ITEMS = [
   // TOPS
-  { name: "White Cotton T-Shirt",      category: "top", type: "t-shirt",   color: "white",    purchasePrice: 1299, size: "M", brand: "H&M",            imageUrl: U("1521572163474-6864f9cf17ab") },
-  { name: "Black V-Neck T-Shirt",      category: "top", type: "t-shirt",   color: "black",    purchasePrice: 1499, size: "M", brand: "Zara",           imageUrl: U("1583743814966-8936f5b7be1a") },
-  { name: "Blush Pink Crop Top",       category: "top", type: "crop-top",  color: "pink",     purchasePrice: 1899, size: "S", brand: "Zara",           imageUrl: U("1618354691373-d851c5c3a990") },
-  { name: "White Linen Shirt",         category: "top", type: "shirt",     color: "white",    purchasePrice: 2499, size: "M", brand: "Fabindia",       imageUrl: U("1596755094514-f87e34085b2c") },
-  { name: "Beige Oversized Shirt",     category: "top", type: "shirt",     color: "beige",    purchasePrice: 2199, size: "L", brand: "H&M",            imageUrl: U("1602810318383-e386cc2a3ccf") },
-  { name: "Black Satin Blouse",        category: "top", type: "blouse",    color: "black",    purchasePrice: 3499, size: "S", brand: "Zara",           imageUrl: U("1564257631407-4deb1f99d992") },
-  { name: "Ivory Silk Blouse",         category: "top", type: "blouse",    color: "cream",    purchasePrice: 4999, size: "M", brand: "AND",            imageUrl: U("1551163943-3f7253a97e52") },
-  { name: "Coral Floral Blouse",       category: "top", type: "blouse",    color: "coral",    purchasePrice: 2799, size: "S", brand: "Global Desi",    imageUrl: U("1572804013309-59a88b7e92f1") },
-  { name: "Grey Marl Hoodie",          category: "top", type: "hoodie",    color: "gray",     purchasePrice: 3999, size: "L", brand: "Nike",           imageUrl: U("1556821840-3a63f15732ce") },
-  { name: "Cream Knit Sweater",        category: "top", type: "sweater",   color: "cream",    purchasePrice: 5999, size: "M", brand: "Mango",          imageUrl: U("1576566588028-4147f3842f27") },
-  { name: "Burgundy Turtleneck",       category: "top", type: "sweater",   color: "burgundy", purchasePrice: 4999, size: "M", brand: "Zara",           imageUrl: U("1608744882201-52a7f7f3dd60") },
-  { name: "Lavender Crop Sweater",     category: "top", type: "sweater",   color: "lavender", purchasePrice: 3499, size: "S", brand: "Mango",          imageUrl: U("1620799140408-edc6dcb6d633") },
-  { name: "White Camisole",            category: "top", type: "camisole",  color: "white",    purchasePrice: 999,  size: "S", brand: "H&M",            imageUrl: U("1503342217505-b0a15ec3261c") },
-  { name: "Olive Green Tank Top",      category: "top", type: "tank",      color: "olive",    purchasePrice: 1199, size: "M", brand: "H&M",            imageUrl: U("1503342217505-b0a15ec3261c") },
-  { name: "Teal Printed Blouse",       category: "top", type: "blouse",    color: "teal",     purchasePrice: 2599, size: "S", brand: "W",              imageUrl: U("1485462537746-965f33f7f6a7") },
+  { name: "White Cotton T-Shirt",    category: "top", type: "t-shirt",   color: "white",    purchasePrice: 1299,  size: "M", brand: "H&M",            imageUrl: img("white",    "White\nCotton\nT-Shirt") },
+  { name: "Black V-Neck T-Shirt",    category: "top", type: "t-shirt",   color: "black",    purchasePrice: 1499,  size: "M", brand: "Zara",           imageUrl: img("black",    "Black\nV-Neck\nT-Shirt") },
+  { name: "Blush Pink Crop Top",     category: "top", type: "crop-top",  color: "pink",     purchasePrice: 1899,  size: "S", brand: "Zara",           imageUrl: img("pink",     "Blush Pink\nCrop Top") },
+  { name: "White Linen Shirt",       category: "top", type: "shirt",     color: "white",    purchasePrice: 2499,  size: "M", brand: "Fabindia",       imageUrl: img("white",    "White\nLinen Shirt") },
+  { name: "Light Blue Oxford Shirt", category: "top", type: "shirt",     color: "blue",     purchasePrice: 2999,  size: "M", brand: "Arrow",          imageUrl: img("blue",     "Light Blue\nOxford Shirt") },
+  { name: "Beige Oversized Shirt",   category: "top", type: "shirt",     color: "beige",    purchasePrice: 2199,  size: "L", brand: "H&M",            imageUrl: img("beige",    "Beige\nOversized Shirt") },
+  { name: "Black Satin Blouse",      category: "top", type: "blouse",    color: "black",    purchasePrice: 3499,  size: "S", brand: "Zara",           imageUrl: img("black",    "Black\nSatin Blouse") },
+  { name: "Ivory Silk Blouse",       category: "top", type: "blouse",    color: "cream",    purchasePrice: 4999,  size: "M", brand: "AND",            imageUrl: img("cream",    "Ivory\nSilk Blouse") },
+  { name: "Coral Floral Blouse",     category: "top", type: "blouse",    color: "coral",    purchasePrice: 2799,  size: "S", brand: "Global Desi",    imageUrl: img("coral",    "Coral\nFloral Blouse") },
+  { name: "Grey Marl Hoodie",        category: "top", type: "hoodie",    color: "gray",     purchasePrice: 3999,  size: "L", brand: "Nike",           imageUrl: img("gray",     "Grey\nMarl Hoodie") },
+  { name: "Cream Knit Sweater",      category: "top", type: "sweater",   color: "cream",    purchasePrice: 5999,  size: "M", brand: "Mango",          imageUrl: img("cream",    "Cream\nKnit Sweater") },
+  { name: "Burgundy Turtleneck",     category: "top", type: "sweater",   color: "burgundy", purchasePrice: 4999,  size: "M", brand: "Zara",           imageUrl: img("burgundy", "Burgundy\nTurtleneck") },
+  { name: "Lavender Crop Sweater",   category: "top", type: "sweater",   color: "lavender", purchasePrice: 3499,  size: "S", brand: "Mango",          imageUrl: img("lavender", "Lavender\nCrop Sweater") },
+  { name: "White Camisole",          category: "top", type: "camisole",  color: "white",    purchasePrice: 999,   size: "S", brand: "H&M",            imageUrl: img("white",    "White\nCamisole") },
+  { name: "Olive Green Tank Top",    category: "top", type: "tank",      color: "olive",    purchasePrice: 1199,  size: "M", brand: "H&M",            imageUrl: img("olive",    "Olive Green\nTank Top") },
+  { name: "Teal Printed Blouse",     category: "top", type: "blouse",    color: "teal",     purchasePrice: 2599,  size: "S", brand: "W",              imageUrl: img("teal",     "Teal\nPrinted Blouse") },
+  { name: "Red Polo Shirt",          category: "top", type: "polo",      color: "red",      purchasePrice: 2299,  size: "M", brand: "Lacoste",        imageUrl: img("red",      "Red\nPolo Shirt") },
+  { name: "Navy Striped T-Shirt",    category: "top", type: "t-shirt",   color: "navy",     purchasePrice: 1599,  size: "M", brand: "M&S",            imageUrl: img("navy",     "Navy\nStriped T-Shirt") },
+  { name: "Pink Floral Blouse",      category: "top", type: "blouse",    color: "pink",     purchasePrice: 2199,  size: "S", brand: "Global Desi",    imageUrl: img("pink",     "Pink\nFloral Blouse") },
+  { name: "Brown Knit Sweater",      category: "top", type: "sweater",   color: "brown",    purchasePrice: 4499,  size: "M", brand: "Mango",          imageUrl: img("brown",    "Brown\nKnit Sweater") },
 
   // BOTTOMS
-  { name: "Blue Skinny Jeans",         category: "bottom", type: "jeans",     color: "blue",  purchasePrice: 3999, size: "M", brand: "Levis",          imageUrl: U("1542272604-787c3835535d") },
-  { name: "Black Slim Jeans",          category: "bottom", type: "jeans",     color: "black", purchasePrice: 4499, size: "M", brand: "Zara",           imageUrl: U("1541099649105-f69ad21f3246") },
-  { name: "Denim Mini Skirt",          category: "bottom", type: "skirt",     color: "blue",  purchasePrice: 2999, size: "S", brand: "Zara",           imageUrl: U("1583496661160-fb5886a0aaaa") },
-  { name: "Black Midi Skirt",          category: "bottom", type: "skirt",     color: "black", purchasePrice: 3499, size: "M", brand: "Mango",          imageUrl: U("1577900232427-18219b9166a0") },
-  { name: "Pink Pleated Skirt",        category: "bottom", type: "skirt",     color: "pink",  purchasePrice: 2999, size: "S", brand: "Zara",           imageUrl: U("1572804013427-4d7ca7268217") },
-  { name: "Black Leggings",            category: "bottom", type: "leggings",  color: "black", purchasePrice: 1499, size: "M", brand: "Nike",           imageUrl: U("1506629082955-511b1aa562c8") },
-  { name: "Navy Palazzo Pants",        category: "bottom", type: "palazzo",   color: "navy",  purchasePrice: 2499, size: "M", brand: "W",              imageUrl: U("1509631179647-0177331693ae") },
-  { name: "Beige Chinos",              category: "bottom", type: "chinos",    color: "beige", purchasePrice: 3299, size: "M", brand: "Marks & Spencer",imageUrl: U("1473966968600-fa801b869a1a") },
-  { name: "Grey Joggers",              category: "bottom", type: "joggers",   color: "gray",  purchasePrice: 2499, size: "L", brand: "Adidas",         imageUrl: U("1552902865-b72c031ac5ea") },
-  { name: "White Wide Leg Trousers",   category: "bottom", type: "trousers",  color: "white", purchasePrice: 3499, size: "M", brand: "H&M",            imageUrl: U("1594938298603-c8148c4b4357") },
+  { name: "Blue Skinny Jeans",       category: "bottom", type: "jeans",    color: "blue",  purchasePrice: 3999,  size: "M", brand: "Levis",          imageUrl: img("blue",     "Blue\nSkinny Jeans") },
+  { name: "Black Slim Jeans",        category: "bottom", type: "jeans",    color: "black", purchasePrice: 4499,  size: "M", brand: "Zara",           imageUrl: img("black",    "Black\nSlim Jeans") },
+  { name: "Denim Mini Skirt",        category: "bottom", type: "skirt",    color: "blue",  purchasePrice: 2999,  size: "S", brand: "Zara",           imageUrl: img("blue",     "Denim\nMini Skirt") },
+  { name: "Black Midi Skirt",        category: "bottom", type: "skirt",    color: "black", purchasePrice: 3499,  size: "M", brand: "Mango",          imageUrl: img("black",    "Black\nMidi Skirt") },
+  { name: "Pink Pleated Skirt",      category: "bottom", type: "skirt",    color: "pink",  purchasePrice: 2999,  size: "S", brand: "Zara",           imageUrl: img("pink",     "Pink\nPleated Skirt") },
+  { name: "Beige Chinos",            category: "bottom", type: "chinos",   color: "beige", purchasePrice: 3299,  size: "M", brand: "M&S",            imageUrl: img("beige",    "Beige\nChinos") },
+  { name: "Black Leggings",          category: "bottom", type: "leggings", color: "black", purchasePrice: 1499,  size: "M", brand: "Nike",           imageUrl: img("black",    "Black\nLeggings") },
+  { name: "Navy Palazzo Pants",      category: "bottom", type: "palazzo",  color: "navy",  purchasePrice: 2499,  size: "M", brand: "W",              imageUrl: img("navy",     "Navy\nPalazzo Pants") },
+  { name: "Grey Joggers",            category: "bottom", type: "joggers",  color: "gray",  purchasePrice: 2499,  size: "L", brand: "Adidas",         imageUrl: img("gray",     "Grey\nJoggers") },
+  { name: "Navy Formal Trousers",    category: "bottom", type: "trousers", color: "navy",  purchasePrice: 4999,  size: "M", brand: "Van Heusen",     imageUrl: img("navy",     "Navy\nFormal Trousers") },
+  { name: "Black Formal Trousers",   category: "bottom", type: "trousers", color: "black", purchasePrice: 4499,  size: "M", brand: "Arrow",          imageUrl: img("black",    "Black\nFormal Trousers") },
+  { name: "White Wide Leg Trousers", category: "bottom", type: "trousers", color: "white", purchasePrice: 3499,  size: "M", brand: "H&M",            imageUrl: img("white",    "White Wide\nLeg Trousers") },
+  { name: "Burgundy Culottes",       category: "bottom", type: "culottes", color: "burgundy",purchasePrice: 2799,size: "M", brand: "AND",            imageUrl: img("burgundy", "Burgundy\nCulottes") },
+  { name: "Teal Palazzo",            category: "bottom", type: "palazzo",  color: "teal",  purchasePrice: 2299,  size: "M", brand: "W",              imageUrl: img("teal",     "Teal\nPalazzo") },
 
   // DRESSES
-  { name: "Black Wrap Dress",          category: "dress", type: "casual-dress",   color: "black",    purchasePrice: 5999,  size: "M", brand: "Zara",       imageUrl: U("1595777457583-95e059d581b8") },
-  { name: "Floral Midi Dress",         category: "dress", type: "midi-dress",     color: "pink",     purchasePrice: 4999,  size: "S", brand: "H&M",        imageUrl: U("1612336307429-8a898d10e223") },
-  { name: "Navy Maxi Dress",           category: "dress", type: "maxi-dress",     color: "navy",     purchasePrice: 6999,  size: "M", brand: "Mango",      imageUrl: U("1566174053879-31528523f8ae") },
-  { name: "White Sundress",            category: "dress", type: "sundress",       color: "white",    purchasePrice: 3999,  size: "S", brand: "Zara",       imageUrl: U("1515372039744-b8f02a3ae446") },
-  { name: "Red Cocktail Dress",        category: "dress", type: "cocktail-dress", color: "red",      purchasePrice: 8999,  size: "M", brand: "AND",        imageUrl: U("1502716119720-b23a93e5fe1b") },
-  { name: "Beige Shirt Dress",         category: "dress", type: "casual-dress",   color: "beige",    purchasePrice: 4499,  size: "M", brand: "H&M",        imageUrl: U("1496747611176-843222e1e57c") },
-  { name: "Lavender Mini Dress",       category: "dress", type: "mini-dress",     color: "lavender", purchasePrice: 4999,  size: "S", brand: "Zara",       imageUrl: U("1585487000160-6ebcfceb0d03") },
-  { name: "Black Formal Dress",        category: "dress", type: "formal-dress",   color: "black",    purchasePrice: 9999,  size: "M", brand: "Mango",      imageUrl: U("1539008835657-9e8e9680c956") },
-  { name: "Burgundy Midi Dress",       category: "dress", type: "midi-dress",     color: "burgundy", purchasePrice: 6499,  size: "M", brand: "Zara",       imageUrl: U("1550639525-c97d455acf70") },
-  { name: "Emerald Evening Gown",      category: "dress", type: "evening-gown",   color: "green",    purchasePrice: 18999, size: "M", brand: "Ritu Kumar", imageUrl: U("1518611012118-696072aa579a") },
+  { name: "Black Wrap Dress",        category: "dress", type: "casual-dress",   color: "black",    purchasePrice: 5999,  size: "M", brand: "Zara",       imageUrl: img("black",    "Black\nWrap Dress") },
+  { name: "Floral Midi Dress",       category: "dress", type: "midi-dress",     color: "pink",     purchasePrice: 4999,  size: "S", brand: "H&M",        imageUrl: img("pink",     "Floral\nMidi Dress") },
+  { name: "Navy Maxi Dress",         category: "dress", type: "maxi-dress",     color: "navy",     purchasePrice: 6999,  size: "M", brand: "Mango",      imageUrl: img("navy",     "Navy\nMaxi Dress") },
+  { name: "White Sundress",          category: "dress", type: "sundress",       color: "white",    purchasePrice: 3999,  size: "S", brand: "Zara",       imageUrl: img("white",    "White\nSundress") },
+  { name: "Red Cocktail Dress",      category: "dress", type: "cocktail-dress", color: "red",      purchasePrice: 8999,  size: "M", brand: "AND",        imageUrl: img("red",      "Red\nCocktail Dress") },
+  { name: "Beige Shirt Dress",       category: "dress", type: "casual-dress",   color: "beige",    purchasePrice: 4499,  size: "M", brand: "H&M",        imageUrl: img("beige",    "Beige\nShirt Dress") },
+  { name: "Lavender Mini Dress",     category: "dress", type: "mini-dress",     color: "lavender", purchasePrice: 4999,  size: "S", brand: "Zara",       imageUrl: img("lavender", "Lavender\nMini Dress") },
+  { name: "Black Formal Dress",      category: "dress", type: "formal-dress",   color: "black",    purchasePrice: 9999,  size: "M", brand: "Mango",      imageUrl: img("black",    "Black\nFormal Dress") },
+  { name: "Burgundy Midi Dress",     category: "dress", type: "midi-dress",     color: "burgundy", purchasePrice: 6499,  size: "M", brand: "Zara",       imageUrl: img("burgundy", "Burgundy\nMidi Dress") },
+  { name: "Emerald Evening Gown",    category: "dress", type: "evening-gown",   color: "green",    purchasePrice: 18999, size: "M", brand: "Ritu Kumar", imageUrl: img("green",    "Emerald\nEvening Gown") },
+  { name: "Coral Sundress",          category: "dress", type: "sundress",       color: "coral",    purchasePrice: 3499,  size: "S", brand: "H&M",        imageUrl: img("coral",    "Coral\nSundress") },
+  { name: "Yellow Maxi Dress",       category: "dress", type: "maxi-dress",     color: "yellow",   purchasePrice: 5999,  size: "M", brand: "Global Desi",imageUrl: img("yellow",   "Yellow\nMaxi Dress") },
 
   // TRADITIONAL
-  { name: "Silk Banarasi Saree",       category: "traditional", type: "saree",        color: "red",   purchasePrice: 25000, size: "Free size", brand: "Fabindia",   imageUrl: U("1610030469983-98e550d6193c") },
-  { name: "Navy Blue Lehenga",         category: "traditional", type: "lehenga",      color: "navy",  purchasePrice: 35000, size: "M",         brand: "Ritu Kumar", imageUrl: U("1583391733956-6c78276477e2") },
-  { name: "Pink Anarkali Suit",        category: "traditional", type: "anarkali",     color: "pink",  purchasePrice: 8999,  size: "M",         brand: "Biba",       imageUrl: U("1617627143750-d86bc21e42bb") },
-  { name: "White Cotton Kurti",        category: "traditional", type: "kurti",        color: "white", purchasePrice: 2499,  size: "M",         brand: "Fabindia",   imageUrl: U("1614252235316-8c857d38b5f4") },
-  { name: "Maroon Silk Saree",         category: "traditional", type: "saree",        color: "maroon",purchasePrice: 18000, size: "Free size", brand: "Fabindia",   imageUrl: U("1609357605129-26f69add5d6e") },
-  { name: "Teal Salwar Kameez",        category: "traditional", type: "salwar-kameez",color: "teal",  purchasePrice: 5999,  size: "M",         brand: "W",          imageUrl: U("1617627143750-d86bc21e42bb") },
+  { name: "Silk Banarasi Saree",     category: "traditional", type: "saree",         color: "red",    purchasePrice: 25000, size: "Free size", brand: "Fabindia",   imageUrl: img("red",      "Silk\nBanarasi Saree") },
+  { name: "Navy Blue Lehenga",       category: "traditional", type: "lehenga",       color: "navy",   purchasePrice: 35000, size: "M",         brand: "Ritu Kumar", imageUrl: img("navy",     "Navy Blue\nLehenga") },
+  { name: "Pink Anarkali Suit",      category: "traditional", type: "anarkali",      color: "pink",   purchasePrice: 8999,  size: "M",         brand: "Biba",       imageUrl: img("pink",     "Pink\nAnarkali Suit") },
+  { name: "White Cotton Kurti",      category: "traditional", type: "kurti",         color: "white",  purchasePrice: 2499,  size: "M",         brand: "Fabindia",   imageUrl: img("white",    "White\nCotton Kurti") },
+  { name: "Maroon Silk Saree",       category: "traditional", type: "saree",         color: "maroon", purchasePrice: 18000, size: "Free size", brand: "Fabindia",   imageUrl: img("maroon",   "Maroon\nSilk Saree") },
+  { name: "Teal Salwar Kameez",      category: "traditional", type: "salwar-kameez", color: "teal",   purchasePrice: 5999,  size: "M",         brand: "W",          imageUrl: img("teal",     "Teal\nSalwar Kameez") },
+  { name: "Gold Embroidered Lehenga",category: "traditional", type: "lehenga",       color: "gold",   purchasePrice: 45000, size: "M",         brand: "Sabyasachi", imageUrl: img("gold",     "Gold\nLehenga") },
+  { name: "Beige Printed Kurti",     category: "traditional", type: "kurti",         color: "beige",  purchasePrice: 1999,  size: "M",         brand: "Fabindia",   imageUrl: img("beige",    "Beige\nPrinted Kurti") },
 
   // OUTERWEAR
-  { name: "Black Leather Jacket",      category: "outerwear", type: "jacket",   color: "black", purchasePrice: 12999, size: "M", brand: "Zara",           imageUrl: U("1551028719-00167b16eac5") },
-  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",     color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",          imageUrl: U("1548624313-0396c75e4b1a") },
-  { name: "Navy Blazer",               category: "outerwear", type: "blazer",   color: "navy",  purchasePrice: 8999,  size: "M", brand: "Van Heusen",     imageUrl: U("1507679799987-c73779587ccf") },
-  { name: "Denim Jacket",              category: "outerwear", type: "jacket",   color: "blue",  purchasePrice: 5999,  size: "M", brand: "Levis",          imageUrl: U("1523205771623-e0faa4d2813d") },
-  { name: "White Blazer",              category: "outerwear", type: "blazer",   color: "white", purchasePrice: 7999,  size: "M", brand: "Zara",           imageUrl: U("1593030761757-71fae45fa0e7") },
-  { name: "Burgundy Cardigan",         category: "outerwear", type: "cardigan", color: "burgundy",purchasePrice: 4999,size: "M", brand: "Mango",          imageUrl: U("1434389677669-e08b4cac3105") },
+  { name: "Black Leather Jacket",    category: "outerwear", type: "jacket",   color: "black",    purchasePrice: 12999, size: "M", brand: "Zara",       imageUrl: img("black",    "Black\nLeather Jacket") },
+  { name: "Camel Trench Coat",       category: "outerwear", type: "coat",     color: "beige",    purchasePrice: 15999, size: "M", brand: "Mango",      imageUrl: img("beige",    "Camel\nTrench Coat") },
+  { name: "Navy Blazer",             category: "outerwear", type: "blazer",   color: "navy",     purchasePrice: 8999,  size: "M", brand: "Van Heusen", imageUrl: img("navy",     "Navy\nBlazer") },
+  { name: "Grey Wool Coat",          category: "outerwear", type: "coat",     color: "gray",     purchasePrice: 18999, size: "M", brand: "M&S",        imageUrl: img("gray",     "Grey\nWool Coat") },
+  { name: "Denim Jacket",            category: "outerwear", type: "jacket",   color: "blue",     purchasePrice: 5999,  size: "M", brand: "Levis",      imageUrl: img("blue",     "Denim\nJacket") },
+  { name: "White Blazer",            category: "outerwear", type: "blazer",   color: "white",    purchasePrice: 7999,  size: "M", brand: "Zara",       imageUrl: img("white",    "White\nBlazer") },
+  { name: "Black Formal Blazer",     category: "outerwear", type: "blazer",   color: "black",    purchasePrice: 9999,  size: "M", brand: "Arrow",      imageUrl: img("black",    "Black\nFormal Blazer") },
+  { name: "Burgundy Cardigan",       category: "outerwear", type: "cardigan", color: "burgundy", purchasePrice: 4999,  size: "M", brand: "Mango",      imageUrl: img("burgundy", "Burgundy\nCardigan") },
 
   // SHOES
-  { name: "White Sneakers",            category: "shoes", type: "sneakers",     color: "white", purchasePrice: 7999, size: "M", brand: "Nike",            imageUrl: U("1542291026-7eec264c27ff") },
-  { name: "Black Ankle Boots",         category: "shoes", type: "boots",        color: "black", purchasePrice: 9999, size: "M", brand: "Zara",            imageUrl: U("1543163521-1bf539c55dd2") },
-  { name: "Nude Block Heels",          category: "shoes", type: "heels",        color: "beige", purchasePrice: 5999, size: "M", brand: "Steve Madden",    imageUrl: U("1515347619252-60a4bf4fff4f") },
-  { name: "Gold Strappy Sandals",      category: "shoes", type: "sandals",      color: "gold",  purchasePrice: 4999, size: "M", brand: "Aldo",            imageUrl: U("1603487742131-4160ec999306") },
-  { name: "Black Ballet Flats",        category: "shoes", type: "ballet-flats", color: "black", purchasePrice: 3999, size: "M", brand: "Mango",           imageUrl: U("1560343090-f0409e92791a") },
-  { name: "Red Stilettos",             category: "shoes", type: "stilettos",    color: "red",   purchasePrice: 8999, size: "M", brand: "Steve Madden",    imageUrl: U("1518049362265-d5b2a6467637") },
-  { name: "White Slip-On Sneakers",    category: "shoes", type: "sneakers",     color: "white", purchasePrice: 4999, size: "M", brand: "Vans",            imageUrl: U("1525966222134-fcfa99b8ae77") },
+  { name: "White Sneakers",          category: "shoes", type: "sneakers",     color: "white", purchasePrice: 7999,  size: "M", brand: "Nike",         imageUrl: img("white",    "White\nSneakers") },
+  { name: "Black Ankle Boots",       category: "shoes", type: "boots",        color: "black", purchasePrice: 9999,  size: "M", brand: "Zara",         imageUrl: img("black",    "Black\nAnkle Boots") },
+  { name: "Nude Block Heels",        category: "shoes", type: "heels",        color: "beige", purchasePrice: 5999,  size: "M", brand: "Steve Madden", imageUrl: img("beige",    "Nude\nBlock Heels") },
+  { name: "Gold Strappy Sandals",    category: "shoes", type: "sandals",      color: "gold",  purchasePrice: 4999,  size: "M", brand: "Aldo",         imageUrl: img("gold",     "Gold\nStrappy Sandals") },
+  { name: "Black Ballet Flats",      category: "shoes", type: "ballet-flats", color: "black", purchasePrice: 3999,  size: "M", brand: "Mango",        imageUrl: img("black",    "Black\nBallet Flats") },
+  { name: "Red Stilettos",           category: "shoes", type: "stilettos",    color: "red",   purchasePrice: 8999,  size: "M", brand: "Steve Madden", imageUrl: img("red",      "Red\nStilettos") },
+  { name: "White Slip-On Sneakers",  category: "shoes", type: "sneakers",     color: "white", purchasePrice: 4999,  size: "M", brand: "Vans",         imageUrl: img("white",    "White\nSlip-On") },
+  { name: "Brown Loafers",           category: "shoes", type: "loafers",      color: "brown", purchasePrice: 6999,  size: "M", brand: "Clarks",       imageUrl: img("brown",    "Brown\nLoafers") },
 
   // ACCESSORIES
-  { name: "Black Leather Handbag",     category: "accessory", type: "handbag",  color: "black",     purchasePrice: 8999,  size: "Free size", brand: "Zara",              imageUrl: U("1548036328-c9fa89d128fa") },
-  { name: "Tan Tote Bag",              category: "accessory", type: "bag",      color: "brown",     purchasePrice: 6999,  size: "Free size", brand: "Mango",             imageUrl: U("1590874103328-eac38a683ce7") },
-  { name: "Gold Statement Necklace",   category: "accessory", type: "jewelry",  color: "gold",      purchasePrice: 3999,  size: "Free size", brand: "Accessorize",       imageUrl: U("1599643478518-a784e5dc4c8f") },
-  { name: "Black Leather Belt",        category: "accessory", type: "belt",     color: "black",     purchasePrice: 2499,  size: "M",         brand: "Zara",              imageUrl: U("1553062407-98eeb64c6a62") },
-  { name: "Rose Gold Watch",           category: "accessory", type: "watch",    color: "rose-gold", purchasePrice: 12999, size: "Free size", brand: "Daniel Wellington", imageUrl: U("1523275335684-37898b6baf30") },
-  { name: "Beige Clutch Bag",          category: "accessory", type: "clutch",   color: "beige",     purchasePrice: 4999,  size: "Free size", brand: "Aldo",              imageUrl: U("1566150905458-1bf1fc113f0d") },
-  { name: "Silver Hoop Earrings",      category: "accessory", type: "jewelry",  color: "silver",    purchasePrice: 1999,  size: "Free size", brand: "Accessorize",       imageUrl: U("1535632066927-ab7c9ab60908") },
-  { name: "Brown Sling Bag",           category: "accessory", type: "bag",      color: "brown",     purchasePrice: 4499,  size: "Free size", brand: "Mango",             imageUrl: U("1584917865442-de89df76afd3") },
-];
-
-export const MALE_ITEMS = [
-  // TOPS
-  { name: "White Crew Neck T-Shirt",   category: "top", type: "t-shirt", color: "white",  purchasePrice: 1299, size: "M", brand: "H&M",        imageUrl: U("1521572163474-6864f9cf17ab") },
-  { name: "Black Graphic T-Shirt",     category: "top", type: "t-shirt", color: "black",  purchasePrice: 1499, size: "M", brand: "Zara",       imageUrl: U("1583743814966-8936f5b7be1a") },
-  { name: "Navy Blue Polo Shirt",      category: "top", type: "polo",    color: "navy",   purchasePrice: 2299, size: "M", brand: "Lacoste",    imageUrl: U("1571945153237-4929e783af4a") },
-  { name: "Light Blue Oxford Shirt",   category: "top", type: "shirt",   color: "blue",   purchasePrice: 2999, size: "M", brand: "Arrow",      imageUrl: U("1602810318383-e386cc2a3ccf") },
-  { name: "White Formal Shirt",        category: "top", type: "shirt",   color: "white",  purchasePrice: 2499, size: "M", brand: "Van Heusen", imageUrl: U("1596755094514-f87e34085b2c") },
-  { name: "Grey Marl Hoodie",          category: "top", type: "hoodie",  color: "gray",   purchasePrice: 3999, size: "L", brand: "Nike",       imageUrl: U("1556821840-3a63f15732ce") },
-  { name: "Black Zip Hoodie",          category: "top", type: "hoodie",  color: "black",  purchasePrice: 4499, size: "M", brand: "Adidas",     imageUrl: U("1509942774463-acf339cf87d5") },
-  { name: "Cream Knit Sweater",        category: "top", type: "sweater", color: "cream",  purchasePrice: 5999, size: "M", brand: "Mango",      imageUrl: U("1576566588028-4147f3842f27") },
-  { name: "Burgundy Turtleneck",       category: "top", type: "sweater", color: "burgundy",purchasePrice: 4999,size: "M", brand: "Zara",       imageUrl: U("1608744882201-52a7f7f3dd60") },
-  { name: "Olive Green Shirt",         category: "top", type: "shirt",   color: "olive",  purchasePrice: 2199, size: "M", brand: "H&M",        imageUrl: U("1598033129183-c4f50c736f10") },
-
-  // BOTTOMS
-  { name: "Blue Slim Fit Jeans",       category: "bottom", type: "jeans",    color: "blue",  purchasePrice: 3999, size: "M", brand: "Levis",       imageUrl: U("1542272604-787c3835535d") },
-  { name: "Black Skinny Jeans",        category: "bottom", type: "jeans",    color: "black", purchasePrice: 4499, size: "M", brand: "Zara",        imageUrl: U("1541099649105-f69ad21f3246") },
-  { name: "Beige Chinos",              category: "bottom", type: "chinos",   color: "beige", purchasePrice: 3299, size: "M", brand: "Marks & Spencer",imageUrl: U("1473966968600-fa801b869a1a") },
-  { name: "Navy Formal Trousers",      category: "bottom", type: "trousers", color: "navy",  purchasePrice: 4999, size: "M", brand: "Van Heusen",  imageUrl: U("1560243563-062bfc001d68") },
-  { name: "Black Formal Trousers",     category: "bottom", type: "trousers", color: "black", purchasePrice: 4499, size: "M", brand: "Arrow",       imageUrl: U("1624378439575-d8705ad7ae80") },
-  { name: "Grey Joggers",              category: "bottom", type: "joggers",  color: "gray",  purchasePrice: 2499, size: "L", brand: "Adidas",      imageUrl: U("1552902865-b72c031ac5ea") },
-  { name: "Olive Cargo Pants",         category: "bottom", type: "trousers", color: "olive", purchasePrice: 3999, size: "M", brand: "H&M",         imageUrl: U("1517445312882-bc9910d016b7") },
-  { name: "Brown Corduroy Pants",      category: "bottom", type: "trousers", color: "brown", purchasePrice: 3999, size: "M", brand: "H&M",         imageUrl: U("1548883354-94bcfe321cbb") },
-
-  // OUTERWEAR
-  { name: "Black Leather Jacket",      category: "outerwear", type: "jacket",  color: "black", purchasePrice: 12999, size: "M", brand: "Zara",       imageUrl: U("1551028719-00167b16eac5") },
-  { name: "Camel Trench Coat",         category: "outerwear", type: "coat",    color: "beige", purchasePrice: 15999, size: "M", brand: "Mango",      imageUrl: U("1548624313-0396c75e4b1a") },
-  { name: "Navy Blazer",               category: "outerwear", type: "blazer",  color: "navy",  purchasePrice: 8999,  size: "M", brand: "Van Heusen", imageUrl: U("1507679799987-c73779587ccf") },
-  { name: "Grey Wool Coat",            category: "outerwear", type: "coat",    color: "gray",  purchasePrice: 18999, size: "M", brand: "Marks & Spencer",imageUrl: U("1548624313-0396c75e4b1a") },
-  { name: "Denim Jacket",              category: "outerwear", type: "jacket",  color: "blue",  purchasePrice: 5999,  size: "M", brand: "Levis",      imageUrl: U("1523205771623-e0faa4d2813d") },
-  { name: "Black Formal Blazer",       category: "outerwear", type: "blazer",  color: "black", purchasePrice: 9999,  size: "M", brand: "Arrow",      imageUrl: U("1593030761757-71fae45fa0e7") },
-
-  // SHOES
-  { name: "White Sneakers",            category: "shoes", type: "sneakers", color: "white", purchasePrice: 7999, size: "M", brand: "Nike",         imageUrl: U("1542291026-7eec264c27ff") },
-  { name: "Black Leather Boots",       category: "shoes", type: "boots",    color: "black", purchasePrice: 9999, size: "M", brand: "Clarks",       imageUrl: U("1543163521-1bf539c55dd2") },
-  { name: "Brown Loafers",             category: "shoes", type: "loafers",  color: "brown", purchasePrice: 6999, size: "M", brand: "Clarks",       imageUrl: U("1614252235316-8c857d38b5f4") },
-  { name: "White Slip-On Sneakers",    category: "shoes", type: "sneakers", color: "white", purchasePrice: 4999, size: "M", brand: "Vans",         imageUrl: U("1525966222134-fcfa99b8ae77") },
-  { name: "Black Oxford Shoes",        category: "shoes", type: "loafers",  color: "black", purchasePrice: 8999, size: "M", brand: "Clarks",       imageUrl: U("1560343090-f0409e92791a") },
-
-  // ACCESSORIES
-  { name: "Black Leather Backpack",    category: "accessory", type: "backpack", color: "black",     purchasePrice: 5999,  size: "Free size", brand: "Wildcraft",         imageUrl: U("1553062407-98eeb64c6a62") },
-  { name: "Brown Leather Wallet",      category: "accessory", type: "bag",      color: "brown",     purchasePrice: 2999,  size: "Free size", brand: "Fossil",            imageUrl: U("1590874103328-eac38a683ce7") },
-  { name: "Silver Watch",              category: "accessory", type: "watch",    color: "silver",    purchasePrice: 9999,  size: "Free size", brand: "Titan",             imageUrl: U("1523275335684-37898b6baf30") },
-  { name: "Black Leather Belt",        category: "accessory", type: "belt",     color: "black",     purchasePrice: 2499,  size: "M",         brand: "Zara",              imageUrl: U("1553062407-98eeb64c6a62") },
-  { name: "Navy Blue Cap",             category: "accessory", type: "hat",      color: "navy",      purchasePrice: 1499,  size: "Free size", brand: "Nike",              imageUrl: U("1534215754734-18e55d13e346") },
+  { name: "Black Leather Handbag",   category: "accessory", type: "handbag",  color: "black",     purchasePrice: 8999,  size: "Free size", brand: "Zara",              imageUrl: img("black",     "Black\nLeather Handbag") },
+  { name: "Tan Tote Bag",            category: "accessory", type: "bag",      color: "brown",     purchasePrice: 6999,  size: "Free size", brand: "Mango",             imageUrl: img("brown",     "Tan\nTote Bag") },
+  { name: "Gold Statement Necklace", category: "accessory", type: "jewelry",  color: "gold",      purchasePrice: 3999,  size: "Free size", brand: "Accessorize",       imageUrl: img("gold",      "Gold\nNecklace") },
+  { name: "Black Leather Belt",      category: "accessory", type: "belt",     color: "black",     purchasePrice: 2499,  size: "M",         brand: "Zara",              imageUrl: img("black",     "Black\nLeather Belt") },
+  { name: "Rose Gold Watch",         category: "accessory", type: "watch",    color: "rose-gold", purchasePrice: 12999, size: "Free size", brand: "Daniel Wellington", imageUrl: img("rose-gold", "Rose Gold\nWatch") },
+  { name: "Beige Clutch Bag",        category: "accessory", type: "clutch",   color: "beige",     purchasePrice: 4999,  size: "Free size", brand: "Aldo",              imageUrl: img("beige",     "Beige\nClutch Bag") },
+  { name: "Silver Hoop Earrings",    category: "accessory", type: "jewelry",  color: "silver",    purchasePrice: 1999,  size: "Free size", brand: "Accessorize",       imageUrl: img("silver",    "Silver\nHoop Earrings") },
+  { name: "Brown Sling Bag",         category: "accessory", type: "bag",      color: "brown",     purchasePrice: 4499,  size: "Free size", brand: "Mango",             imageUrl: img("brown",     "Brown\nSling Bag") },
+  { name: "Navy Blue Scarf",         category: "accessory", type: "scarf",    color: "navy",      purchasePrice: 1999,  size: "Free size", brand: "Fabindia",          imageUrl: img("navy",      "Navy Blue\nScarf") },
+  { name: "Silver Watch",            category: "accessory", type: "watch",    color: "silver",    purchasePrice: 9999,  size: "Free size", brand: "Titan",             imageUrl: img("silver",    "Silver\nWatch") },
 ];
 
 export const seedWardrobe = async () => {
   const userId = auth.currentUser?.uid;
   if (!userId) return { success: false, message: "Not logged in" };
   try {
-    // Read user gender from Firestore
     const userSnap = await getDoc(doc(db, "users", userId));
     const gender = userSnap.data()?.preferences?.gender || userSnap.data()?.gender || "female";
-    const items = gender === "male" ? MALE_ITEMS : FEMALE_ITEMS;
+    const items = gender === "male" ? FEMALE_ITEMS : FEMALE_ITEMS; // always female for now
 
     const wardrobeRef = collection(db, "users", userId, "wardrobe");
     const existing = await getDocs(wardrobeRef);
@@ -147,7 +139,7 @@ export const seedWardrobe = async () => {
         addDoc(wardrobeRef, { ...item, wearCount: 0, lastWorn: null, purchaseDate: "2024-01-01", createdAt: serverTimestamp() })
       )
     );
-    return { success: true, message: `Added ${items.length} ${gender} wardrobe items!` };
+    return { success: true, message: `Added ${items.length} items to your wardrobe!` };
   } catch (err) {
     return { success: false, message: "Error: " + err.message };
   }
@@ -166,5 +158,4 @@ export const clearWardrobe = async () => {
   }
 };
 
-// Keep for backward compat
 export const SEED_ITEMS = FEMALE_ITEMS;
