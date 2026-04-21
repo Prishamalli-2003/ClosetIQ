@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "ClosetIQ",
+  "name": "ClosetIQ - Smart Wardrobe Companion",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +20,9 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "categories": ["lifestyle", "fashion", "productivity"],
+  "description": "Smart wardrobe management with outfit tracking, cost-per-wear analytics, and purchase decision support"
 }
