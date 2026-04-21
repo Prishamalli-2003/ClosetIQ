@@ -44,6 +44,7 @@ const ClothingItem = ({ item, id, onDelete }) => {
         <p><strong>Category:</strong> {category}</p>
         <p><strong>Type:</strong> {type?.replace('-', ' ')}</p>
         <p><strong>Color:</strong> <ColorDot color={color} /></p>
+        {item?.description && <p style={{ fontSize: '0.72rem', color: '#6b7280', fontStyle: 'italic', lineHeight: 1.4, margin: '0.2rem 0' }}>{item.description}</p>}
         <p><strong>Worn:</strong> {wearCount ?? 0}×</p>
         <p><strong>CPW:</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
         {onDelete && (
