@@ -186,6 +186,8 @@ export const hashSimilarity = (hash1, hash2) => {
   }
   return matches / hash1.length;
 };
+
+const areColorsCompatible = (color1, color2, favoriteColors = []) => {
   const neutrals = ['black', 'white', 'navy', 'gray', 'beige', 'brown'];
   if (!color1 || !color2) return true;
   if (neutrals.includes(color1) || neutrals.includes(color2)) return true;
