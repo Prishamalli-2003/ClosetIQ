@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { detectRedundancy, calculateSmartCostPerWear } from '../services/analyticsLogic';
+import { detectRedundancy, calculateSmartCostPerWear, imageFingerprint, hashSimilarity } from '../services/analyticsLogic';
 import { db, auth } from '../services/firebase';
 import { collection, getDocs, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { prepareImageForUpload } from '../services/imageProcessor';
@@ -14,7 +14,7 @@ import PageHeader from '../components/PageHeader';
 const PurchaseSupport = () => {
   const [newItem, setNewItem] = useState({
     name: '', category: CLOTHING_CATEGORIES[0] || 'top',
-    color: COLORS[0] || 'black', price: 0, imageUrl: null,
+    color: COLORS[0] || 'black', price: 0, imageUrl: null, imageHash: null,
   });
   const [analysis, setAnalysis] = useState(null);
   const [wardrobe, setWardrobe] = useState([]);
@@ -42,8 +42,9 @@ const PurchaseSupport = () => {
     try {
       const { base64, previewUrl } = await prepareImageForUpload(file, { maxWidth: 400, quality: 0.65 });
       setImagePreviewUrl(previewUrl);
-      // Store Base64 directly — no Firebase Storage needed
-      setNewItem((prev) => ({ ...prev, imageUrl: base64 }));
+      // Compute perceptual hash for image similarity detection
+      const hash = await imageFingerprint(base64);
+      setNewItem((prev) => ({ ...prev, imageUrl: base64, imageHash: hash }));
     } catch (err) {
       alert('Could not process image. Please try another photo.');
     } finally {
@@ -51,19 +52,45 @@ const PurchaseSupport = () => {
     }
   };
 
-  const analyzePurchase = () => {
+  const analyzePurchase = async () => {
     if (!newItem.imageUrl) {
       alert('Please add a photo first.');
       return;
     }
+
+    // 1. Check image similarity against all wardrobe items
+    let visualMatch = null;
+    let highestSimilarity = 0;
+
+    if (newItem.imageHash) {
+      for (const item of wardrobe) {
+        if (!item.imageUrl || !item.imageUrl.startsWith('data:')) continue;
+        const itemHash = await imageFingerprint(item.imageUrl);
+        if (!itemHash) continue;
+        const sim = hashSimilarity(newItem.imageHash, itemHash);
+        if (sim > highestSimilarity) {
+          highestSimilarity = sim;
+          visualMatch = item;
+        }
+      }
+    }
+
+    // 2. Type-based redundancy check
     const redundancyResult = detectRedundancy(wardrobe, newItem);
     const costPerWear = calculateSmartCostPerWear(newItem.price ?? 0, 0, newItem.category);
 
     let recommendation, reasoning;
 
-    if (redundancyResult.similarCount === 0) {
+    // Visual match takes highest priority (same photo = same item)
+    if (highestSimilarity >= 0.85 && visualMatch) {
+      recommendation = "DON'T BUY — You already own this exact item";
+      reasoning = `The photo matches "${visualMatch.name}" already in your wardrobe (${visualMatch.brand || 'no brand'}, ₹${visualMatch.purchasePrice || 0}, worn ${visualMatch.wearCount || 0}×). Different brand or price doesn't justify buying the same item again.`;
+    } else if (highestSimilarity >= 0.70 && visualMatch) {
+      recommendation = "DON'T BUY — Very similar item already owned";
+      reasoning = `This looks very similar to "${visualMatch.name}" in your wardrobe. Even at a different price point, you already have this type of item covered.`;
+    } else if (redundancyResult.similarCount === 0) {
       recommendation = 'BUY — This adds variety to your wardrobe';
-      reasoning = 'You don\'t own anything similar. This is a good addition.';
+      reasoning = "You don't own anything similar. This is a good addition.";
     } else if (redundancyResult.similarCount === 1) {
       const s = redundancyResult.items[0];
       recommendation = 'MAYBE — You have something similar';
@@ -71,10 +98,19 @@ const PurchaseSupport = () => {
     } else {
       recommendation = "DON'T BUY — You already own this";
       const names = redundancyResult.items.slice(0, 3).map(i => `"${i.name}"`).join(', ');
-      reasoning = `You already have ${redundancyResult.similarCount} similar items: ${names}. Adding another would be a duplicate purchase.`;
+      reasoning = `You already have ${redundancyResult.similarCount} similar items: ${names}.`;
     }
 
-    setAnalysis({ ...redundancyResult, costPerWear, recommendation, reasoning });
+    // Add visual match to results if found
+    const finalResult = {
+      ...redundancyResult,
+      costPerWear,
+      recommendation,
+      reasoning,
+      visualMatch: highestSimilarity >= 0.70 ? { item: visualMatch, similarity: Math.round(highestSimilarity * 100) } : null,
+    };
+
+    setAnalysis(finalResult);
     setShowAddToWardrobe(recommendation.startsWith('BUY'));
 
     // Save decision to Firestore
@@ -199,6 +235,17 @@ const PurchaseSupport = () => {
               </div>
             </div>
             <p className="analysis-reasoning"><strong>💡 Reasoning:</strong> {analysis.reasoning}</p>
+
+            {analysis.visualMatch && (
+              <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
+                <p style={{ color: '#fca5a5', fontWeight: 600, margin: '0 0 0.25rem', fontSize: '0.9rem' }}>
+                  📸 Visual match found — {analysis.visualMatch.similarity}% similar photo
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '0.82rem' }}>
+                  Matches "{analysis.visualMatch.item?.name}" in your wardrobe. Same item, different brand/price doesn't justify buying again.
+                </p>
+              </div>
+            )}
 
             {Array.isArray(analysis.items) && analysis.items.length > 0 && (
               <div className="similar-items">

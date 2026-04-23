@@ -73,25 +73,60 @@ export const detectRedundancy = (items, newItem) => {
   const newName = (newItem.name || '').toLowerCase().trim();
   const newCategory = newItem.category || '';
   const newColor = newItem.color || '';
+  const newType = newItem.type || '';
   const newBrand = (newItem.brand || '').toLowerCase().trim();
+
+  // Accessory sub-types that are functionally the same regardless of color/brand
+  const BAG_TYPES = ['handbag', 'bag', 'tote', 'clutch', 'backpack', 'sling', 'purse'];
+  const SHOE_TYPES = ['sneakers', 'boots', 'heels', 'sandals', 'flats', 'loafers', 'stilettos', 'wedges', 'ballet-flats'];
+  const WATCH_TYPES = ['watch'];
 
   const similarItems = items.filter(item => {
     const itemName = (item.name || '').toLowerCase().trim();
     const itemBrand = (item.brand || '').toLowerCase().trim();
     const itemPrice = Number(item.purchasePrice ?? item.price ?? 0);
-    const priceWindow = Math.max(1000, newPrice * 0.4);
+    const itemType = item.type || '';
+    const priceWindow = Math.max(1000, newPrice * 0.5);
 
+    // 1. Exact name match
     if (newName.length > 2 && itemName === newName) return true;
+
+    // 2. Same accessory type (bag = bag regardless of color/brand)
+    if (newCategory === 'accessory' && item.category === 'accessory') {
+      const newIsBag = BAG_TYPES.some(t => newType.includes(t) || newName.includes(t));
+      const itemIsBag = BAG_TYPES.some(t => itemType.includes(t) || itemName.includes(t));
+      if (newIsBag && itemIsBag) return true;
+
+      const newIsShoe = SHOE_TYPES.includes(newType);
+      const itemIsShoe = SHOE_TYPES.includes(itemType);
+      if (newIsShoe && itemIsShoe && newType === itemType) return true;
+
+      const newIsWatch = WATCH_TYPES.includes(newType);
+      const itemIsWatch = WATCH_TYPES.includes(itemType);
+      if (newIsWatch && itemIsWatch) return true;
+    }
+
+    // 3. Same shoe type (sneakers = sneakers regardless of brand)
+    if (newCategory === 'shoes' && item.category === 'shoes' && newType === itemType) return true;
+
+    // 4. Same brand + same category + same color
     if (newBrand && itemBrand && newBrand === itemBrand &&
         item.category === newCategory && item.color === newColor) return true;
+
+    // 5. Same category + same color + similar price
     if (item.category === newCategory && item.color === newColor &&
         newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow) return true;
+
+    // 6. Same category + same color (general)
     if (item.category === newCategory && item.color === newColor) return true;
+
+    // 7. Name word overlap (2+ meaningful words)
     if (newName.length > 4) {
       const newWords = newName.split(' ').filter(w => w.length > 3);
       const matchedWords = newWords.filter(w => itemName.includes(w));
       if (matchedWords.length >= 2) return true;
     }
+
     return false;
   });
 
@@ -99,7 +134,58 @@ export const detectRedundancy = (items, newItem) => {
   return { similarCount: unique.length, items: unique };
 };
 
-const areColorsCompatible = (color1, color2, favoriteColors = []) => {
+/**
+ * Generate a simple perceptual fingerprint from a Base64 image.
+ * Draws the image at 8x8, converts to grayscale, returns a 64-bit hash string.
+ * Two photos of the same item will produce identical or near-identical hashes.
+ */
+export const imageFingerprint = (base64DataUrl) => {
+  return new Promise((resolve) => {
+    if (!base64DataUrl || !base64DataUrl.startsWith('data:')) {
+      resolve(null);
+      return;
+    }
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const SIZE = 8;
+        const canvas = document.createElement('canvas');
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, SIZE, SIZE);
+        const data = ctx.getImageData(0, 0, SIZE, SIZE).data;
+        // Convert to grayscale values
+        const grays = [];
+        for (let i = 0; i < data.length; i += 4) {
+          grays.push(Math.round(0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]));
+        }
+        // Average hash — compare each pixel to mean
+        const mean = grays.reduce((a, b) => a + b, 0) / grays.length;
+        const hash = grays.map(g => g >= mean ? '1' : '0').join('');
+        canvas.width = 0; canvas.height = 0;
+        resolve(hash);
+      };
+      img.onerror = () => resolve(null);
+      img.src = base64DataUrl;
+    } catch {
+      resolve(null);
+    }
+  });
+};
+
+/**
+ * Compare two fingerprint hashes — returns similarity 0-1.
+ * >= 0.85 means visually very similar (same item, different angle/lighting).
+ */
+export const hashSimilarity = (hash1, hash2) => {
+  if (!hash1 || !hash2 || hash1.length !== hash2.length) return 0;
+  let matches = 0;
+  for (let i = 0; i < hash1.length; i++) {
+    if (hash1[i] === hash2[i]) matches++;
+  }
+  return matches / hash1.length;
+};
   const neutrals = ['black', 'white', 'navy', 'gray', 'beige', 'brown'];
   if (!color1 || !color2) return true;
   if (neutrals.includes(color1) || neutrals.includes(color2)) return true;
