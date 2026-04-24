@@ -1,28 +1,39 @@
 import { collection, addDoc, getDocs, deleteDoc, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db, auth } from "../services/firebase";
 
+// Color hex for placeholder images
+const HEX = {
+  blue:"1e40af", pink:"f9a8d4", green:"065f46", maroon:"7f1d1d",
+  teal:"0d9488", red:"dc2626", "rose-gold":"f9a8d4", burgundy:"6b21a8",
+};
+const ph = (color, name) =>
+  `https://placehold.co/400x500/${HEX[color]||"6b7280"}/ffffff?text=${encodeURIComponent(name)}&font=playfair-display`;
+
 const SAREES = [
-  { name: "Blue Silk Saree",                                    color: "blue",    purchasePrice: 45000, brand: "Kanjivaram", description: "Rich blue silk Kanjivaram with gold zari border. Grand occasions & weddings.",                          imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop&q=80" },
-  { name: "Baby Pink Banarasi Saree",                           color: "pink",    purchasePrice: 6500,  brand: "Banarasi",   description: "Soft baby pink Banarasi silk with gold border. Festive & family occasions.",                           imageUrl: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80" },
-  { name: "Dark Green Kanjivaram Silk Saree",                   color: "green",   purchasePrice: 2500,  brand: "Kanjivaram", description: "Deep forest green Kanjivaram with gold & navy border. Temple & cultural events.",                       imageUrl: "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=400&h=500&fit=crop&q=80" },
-  { name: "Deep Wine with Red Border Kanjivaram Silk Saree",    color: "maroon",  purchasePrice: 12500, brand: "Kanjivaram", description: "Deep wine Kanjivaram with vibrant red & gold border. Weddings & receptions.",                          imageUrl: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=500&fit=crop&q=80" },
-  { name: "Aqua Blue Kanjivaram Silk Saree",                    color: "teal",    purchasePrice: 14500, brand: "Kanjivaram", description: "Bright aqua blue Kanjivaram with silver zari motifs. Festive & formal occasions.",                      imageUrl: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop&q=80" },
-  { name: "Bright Red with Cream Border Kanjivaram Silk Saree", color: "red",     purchasePrice: 2500,  brand: "Kanjivaram", description: "Classic bright red Kanjivaram with cream zari border. Auspicious occasions & puja.",                   imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop&q=80" },
-  { name: "Organza Designer Saree",                             color: "pink",    purchasePrice: 15000, brand: "Designer",   description: "Blush pink organza with heavy silver embroidery & matching blouse. Weddings & receptions.",             imageUrl: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80" },
-  { name: "Dark Red Sequin Saree",  color: "maroon",  purchasePrice: 54000, brand: "Designer",   description: "Stunning dark red sequin net saree. Grand parties, receptions & award nights.",  imageUrl: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop&q=80" },
-  { name: "Pink Organza Saree",     color: "pink",    purchasePrice: 12000, brand: "Designer",   description: "Delicate blush pink organza with floral embroidery border. Weddings & cocktail parties.", imageUrl: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80" },];
+  { name:"Blue Silk Saree",                                    color:"blue",       purchasePrice:45000, brand:"Kanjivaram", description:"Rich blue silk Kanjivaram with gold zari border. Grand occasions & weddings." },
+  { name:"Baby Pink Banarasi Saree",                           color:"pink",       purchasePrice:6500,  brand:"Banarasi",   description:"Soft baby pink Banarasi silk with gold border. Festive & family occasions." },
+  { name:"Dark Green Kanjivaram Silk Saree",                   color:"green",      purchasePrice:2500,  brand:"Kanjivaram", description:"Deep forest green Kanjivaram with gold & navy border. Temple & cultural events." },
+  { name:"Deep Wine with Red Border Kanjivaram Silk Saree",    color:"maroon",     purchasePrice:12500, brand:"Kanjivaram", description:"Deep wine Kanjivaram with vibrant red & gold border. Weddings & receptions." },
+  { name:"Aqua Blue Kanjivaram Silk Saree",                    color:"teal",       purchasePrice:14500, brand:"Kanjivaram", description:"Bright aqua blue Kanjivaram with silver zari motifs. Festive & formal occasions." },
+  { name:"Bright Red with Cream Border Kanjivaram Silk Saree", color:"red",        purchasePrice:2500,  brand:"Kanjivaram", description:"Classic bright red Kanjivaram with cream zari border. Auspicious occasions & puja." },
+  { name:"Organza Designer Saree",                             color:"pink",       purchasePrice:15000, brand:"Designer",   description:"Blush pink organza with heavy silver embroidery & matching blouse. Weddings & receptions." },
+  { name:"Dark Red Sequin Saree",                              color:"maroon",     purchasePrice:54000, brand:"Designer",   description:"Stunning dark red sequin net saree. Grand parties, receptions & award nights." },
+  { name:"Pink Organza Saree",                                 color:"rose-gold",  purchasePrice:12000, brand:"Designer",   description:"Delicate blush pink organza with floral embroidery border. Weddings & cocktail parties." },
+];
 
 const SAMPLE_LOGS = [
-  { name: "Blue Silk Saree",                                    date: "2026-01-15", occasion: "wedding",   mood: "excited",   description: "Wore to cousin's wedding reception" },
-  { name: "Baby Pink Banarasi Saree",                           date: "2026-02-10", occasion: "festival",  mood: "happy",     description: "Wore for Pongal celebrations" },
-  { name: "Dark Green Kanjivaram Silk Saree",                   date: "2026-01-26", occasion: "religious", mood: "peaceful",  description: "Temple visit on Republic Day" },
-  { name: "Aqua Blue Kanjivaram Silk Saree",                    date: "2026-03-08", occasion: "party",     mood: "confident", description: "Women's Day office celebration" },
-  { name: "Bright Red with Cream Border Kanjivaram Silk Saree", date: "2026-01-14", occasion: "religious", mood: "happy",     description: "Pongal puja at home" },
-  { name: "Baby Pink Banarasi Saree",                           date: "2025-12-25", occasion: "party",     mood: "excited",   description: "Christmas family gathering" },
-  { name: "Blue Silk Saree",                                    date: "2025-11-01", occasion: "wedding",   mood: "excited",   description: "Friend's engagement ceremony" },
-  { name: "Organza Designer Saree",                             date: "2026-02-14", occasion: "party",     mood: "romantic",  description: "Valentine's Day dinner" },
-  { name: "Deep Wine with Red Border Kanjivaram Silk Saree",    date: "2025-10-24", occasion: "festival",  mood: "happy",     description: "Diwali celebration" },
-  { name: "Aqua Blue Kanjivaram Silk Saree",                    date: "2025-09-15", occasion: "religious", mood: "peaceful",  description: "Onam sadya" },
+  { name:"Blue Silk Saree",                                    date:"2026-01-15", occasion:"wedding",   mood:"excited",   description:"Wore to cousin's wedding reception" },
+  { name:"Baby Pink Banarasi Saree",                           date:"2026-02-10", occasion:"festival",  mood:"happy",     description:"Wore for Pongal celebrations" },
+  { name:"Dark Green Kanjivaram Silk Saree",                   date:"2026-01-26", occasion:"religious", mood:"peaceful",  description:"Temple visit on Republic Day" },
+  { name:"Aqua Blue Kanjivaram Silk Saree",                    date:"2026-03-08", occasion:"party",     mood:"confident", description:"Women's Day office celebration" },
+  { name:"Bright Red with Cream Border Kanjivaram Silk Saree", date:"2026-01-14", occasion:"religious", mood:"happy",     description:"Pongal puja at home" },
+  { name:"Baby Pink Banarasi Saree",                           date:"2025-12-25", occasion:"party",     mood:"excited",   description:"Christmas family gathering" },
+  { name:"Blue Silk Saree",                                    date:"2025-11-01", occasion:"wedding",   mood:"excited",   description:"Friend's engagement ceremony" },
+  { name:"Organza Designer Saree",                             date:"2026-02-14", occasion:"party",     mood:"romantic",  description:"Valentine's Day dinner" },
+  { name:"Deep Wine with Red Border Kanjivaram Silk Saree",    date:"2025-10-24", occasion:"festival",  mood:"happy",     description:"Diwali celebration" },
+  { name:"Aqua Blue Kanjivaram Silk Saree",                    date:"2025-09-15", occasion:"religious", mood:"peaceful",  description:"Onam sadya" },
+  { name:"Dark Red Sequin Saree",                              date:"2026-03-15", occasion:"party",     mood:"confident", description:"Annual company gala night" },
+  { name:"Pink Organza Saree",                                 date:"2026-01-20", occasion:"wedding",   mood:"romantic",  description:"Friend's wedding reception" },
 ];
 
 export const seedWardrobe = async () => {
@@ -39,7 +50,8 @@ export const seedWardrobe = async () => {
         name: saree.name, category: "traditional", type: "saree",
         color: saree.color, purchasePrice: saree.purchasePrice,
         size: "Free size", brand: saree.brand, description: saree.description,
-        imageUrl: saree.imageUrl, wearCount: 0, lastWorn: null,
+        imageUrl: ph(saree.color, saree.name),
+        wearCount: 0, lastWorn: null,
         purchaseDate: "2024-01-01", createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       });
       addedItems.push({ id: ref.id, ...saree });
@@ -75,12 +87,14 @@ export const seedWardrobe = async () => {
     try {
       const totalValue = SAREES.reduce((s, i) => s + i.purchasePrice, 0);
       await updateDoc(doc(db, "users", userId), {
-        "stats.totalItems": SAREES.length, "stats.totalWardrobeValue": totalValue,
-        "stats.totalOutfitLogs": SAMPLE_LOGS.length, "stats.lastUpdated": serverTimestamp(),
+        "stats.totalItems": SAREES.length,
+        "stats.totalWardrobeValue": totalValue,
+        "stats.totalOutfitLogs": SAMPLE_LOGS.length,
+        "stats.lastUpdated": serverTimestamp(),
       });
     } catch (_) {}
 
-    return { success: true, message: "Added " + SAREES.length + " sarees + " + SAMPLE_LOGS.length + " outfit logs!" };
+    return { success: true, message: "Added " + SAREES.length + " sarees + " + SAMPLE_LOGS.length + " outfit logs! Tap each item to replace the photo." };
   } catch (err) {
     return { success: false, message: "Error: " + err.message };
   }
