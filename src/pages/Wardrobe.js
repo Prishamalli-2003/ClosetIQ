@@ -133,7 +133,7 @@ const Wardrobe = () => {
             <div className="wardrobe-grid">
               {filteredItems.length === 0
                 ? <div className="empty-state"><span>{items.length === 0 ? "👗" : "🔍"}</span><p>{items.length === 0 ? "Your wardrobe is empty" : "No items match your search"}</p></div>
-                : filteredItems.map(item => <ClothingItem key={item.id} id={item.id} item={item} onDelete={handleDelete} />)
+                : filteredItems.map(item => <ClothingItem key={item.id} id={item.id} item={item} onDelete={handleDelete} onUpdate={(updated) => setItems(prev => prev.map(i => i.id === updated.id ? updated : i))} />)
               }
             </div>
           </div>

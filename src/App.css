@@ -2504,3 +2504,31 @@ h1, h2, h3 {
 .deletion-suggestions {
   margin-bottom: 1.5rem;
 }
+
+/* ============================================================
+   CLOTHING ITEM EDIT MODE
+   ============================================================ */
+.clothing-item-card--editing {
+  border: 2px solid #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.15), 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.edit-field {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #1f2937;
+  background: #f9fafb;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.edit-field:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+}
