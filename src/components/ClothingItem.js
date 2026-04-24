@@ -192,13 +192,14 @@ const ClothingItem = ({ item, id, onDelete, onUpdate }) => {
         {item?.description && <p style={{ fontSize: '0.72rem', color: '#6b7280', fontStyle: 'italic', lineHeight: 1.4, margin: '0.2rem 0' }}>{item.description}</p>}
         <p><strong>Worn:</strong> {wearCount ?? 0}×</p>
         <p><strong>CPW:</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
-        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
           <button type="button" onClick={startEdit}
-            style={{ flex: 1, padding: '0.35rem', background: '#ede9fe', color: '#7c3aed', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '0.4rem 0', background: '#ede9fe', color: '#7c3aed', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
             ✏️ Edit
           </button>
           {onDelete && (
-            <button type="button" className="btn-delete" style={{ flex: 1 }} onClick={() => onDelete(id)}>
+            <button type="button" onClick={() => onDelete(id)}
+              style={{ flex: 1, padding: '0.4rem 0', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
               🗑️ Remove
             </button>
           )}

@@ -348,6 +348,8 @@ h1, h2, h3 {
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .clothing-item-card:hover {
@@ -385,6 +387,9 @@ h1, h2, h3 {
 
 .clothing-item-info {
   padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .clothing-item-info h3 {
