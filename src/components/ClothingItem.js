@@ -191,6 +191,7 @@ const ClothingItem = ({ item, id, onDelete, onUpdate }) => {
         <p><strong>Color:</strong> <ColorDot color={color} /></p>
         {item?.description && <p style={{ fontSize: '0.72rem', color: '#6b7280', fontStyle: 'italic', lineHeight: 1.4, margin: '0.2rem 0' }}>{item.description}</p>}
         <p><strong>Worn:</strong> {wearCount ?? 0}×</p>
+        <p><strong>Price:</strong> {purchasePrice ? `₹${Number(purchasePrice).toLocaleString('en-IN')}` : '—'}</p>
         <p><strong>CPW:</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
         <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
           <button type="button" onClick={startEdit}

@@ -137,9 +137,14 @@ const Dashboard = () => {
                 if (!window.confirm('This will REPLACE your current wardrobe with sample items. Continue?')) return;
                 setSeeding(true);
                 const result = await seedWardrobe();
-                alert(result.message);
                 setSeeding(false);
-                window.location.reload();
+                if (result.success) {
+                  alert(result.message);
+                  // Refresh stats without full page reload
+                  fetchUserData();
+                } else {
+                  alert(result.message);
+                }
               }}
             >
               {seeding ? '⏳ Loading...' : '🔄 Load Sample Items'}

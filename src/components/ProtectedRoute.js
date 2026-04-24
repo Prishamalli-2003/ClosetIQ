@@ -37,8 +37,20 @@ const ProtectedRoute = ({ children }) => {
           );
         }
         const data = (await getDoc(userRef)).data();
-        // Only redirect to onboarding if explicitly false (not missing/undefined)
+        // Only redirect to onboarding if explicitly false AND user has no wardrobe items
+        // (prevents redirect after seeding which updates the user doc)
         if (data?.onboardingComplete === false) {
+          // Check if they have wardrobe items — if so, they've used the app before
+          try {
+            const wardrobeSnap = await getDoc(doc(db, 'users', user.uid));
+            const stats = wardrobeSnap.data()?.stats;
+            if (stats?.totalItems > 0) {
+              // Has items — mark onboarding complete silently and proceed
+              await setDoc(userRef, { onboardingComplete: true }, { merge: true });
+              setStatus('ready');
+              return;
+            }
+          } catch (_) {}
           setStatus('onboarding');
           return;
         }
