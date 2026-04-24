@@ -9,7 +9,8 @@ const SAREES = [
   { name: "Aqua Blue Kanjivaram Silk Saree",                    color: "teal",    purchasePrice: 14500, brand: "Kanjivaram", description: "Bright aqua blue Kanjivaram with silver zari motifs. Festive & formal occasions.",                      imageUrl: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop&q=80" },
   { name: "Bright Red with Cream Border Kanjivaram Silk Saree", color: "red",     purchasePrice: 2500,  brand: "Kanjivaram", description: "Classic bright red Kanjivaram with cream zari border. Auspicious occasions & puja.",                   imageUrl: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop&q=80" },
   { name: "Organza Designer Saree",                             color: "pink",    purchasePrice: 15000, brand: "Designer",   description: "Blush pink organza with heavy silver embroidery & matching blouse. Weddings & receptions.",             imageUrl: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80" },
-];
+  { name: "Dark Red Sequin Saree",  color: "maroon",  purchasePrice: 54000, brand: "Designer",   description: "Stunning dark red sequin net saree. Grand parties, receptions & award nights.",  imageUrl: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop&q=80" },
+  { name: "Pink Organza Saree",     color: "pink",    purchasePrice: 12000, brand: "Designer",   description: "Delicate blush pink organza with floral embroidery border. Weddings & cocktail parties.", imageUrl: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80" },];
 
 const SAMPLE_LOGS = [
   { name: "Blue Silk Saree",                                    date: "2026-01-15", occasion: "wedding",   mood: "excited",   description: "Wore to cousin's wedding reception" },
