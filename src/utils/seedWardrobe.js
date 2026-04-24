@@ -1,4 +1,4 @@
-﻿import { collection, addDoc, getDocs, deleteDoc, serverTimestamp, updateDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db, auth } from "../services/firebase";
 
 // Verified Unsplash flat-lay photos (no models) — only used where description matches exactly
@@ -180,7 +180,7 @@ const ACCESSORIES = [
 // ── BUILD ALL_ITEMS ───────────────────────────────────────────────────────
 const ALL_ITEMS = [
   ...SAREES.map(i => ({ ...i, category:"traditional", type:"saree", size:"Free size" })),
-  ...TRADITIONAL.map(i => ({ ...i, category:"traditional", size:"M" })),
+  ...TRADITIONAL.map(i => ({ ...i, category:"traditional", type: i.type || "other", size:"M" })),
   ...DRESSES.map(i => ({ ...i, category:"dress", size:"M" })),
   ...TOPS.map(i => ({ ...i, category:"top", size:"M" })),
   ...BOTTOMS.map(i => ({ ...i, category:"bottom", size:"M" })),
@@ -231,15 +231,20 @@ export const seedWardrobe = async () => {
     await Promise.all(existing.docs.map(d => deleteDoc(d.ref)));
 
     const addedItems = [];
+    const nn = (v) => (v === undefined || v === null) ? null : v;
     for (const item of ALL_ITEMS) {
       const ref = await addDoc(wardrobeRef, {
-        name: item.name, category: item.category, type: item.type,
-        color: item.color, purchasePrice: item.purchasePrice,
-        size: item.size || "M", brand: item.brand || null,
-        description: item.description || null,
-        imageUrl: item.imageUrl || null,
-        wearCount: 0, lastWorn: null,
-        purchaseDate: "2024-01-01", createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        name:          nn(item.name) || "Unnamed",
+        category:      nn(item.category) || "top",
+        type:          nn(item.type) || "other",
+        color:         nn(item.color) || "black",
+        purchasePrice: nn(item.purchasePrice) || 0,
+        size:          nn(item.size) || "M",
+        brand:         nn(item.brand),
+        description:   nn(item.description),
+        imageUrl:      nn(item.imageUrl),
+        wearCount:     0, lastWorn: null,
+        purchaseDate:  "2024-01-01", createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       });
       addedItems.push({ id: ref.id, ...item });
     }
