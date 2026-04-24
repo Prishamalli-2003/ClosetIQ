@@ -30,6 +30,10 @@ const ClothingItem = ({ item, id, onDelete, onUpdate }) => {
 
   const { name, category, type, color, imageUrl, wearCount, purchasePrice } = item || {};
   const cpw = calculateAdjustedCostPerWear(purchasePrice ?? 0, wearCount ?? 0);
+  // cpw is null when never worn
+  const cpwDisplay = cpw === null
+    ? <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Not worn yet</span>
+    : formatINR(cpw, { maximumFractionDigits: 0 });
   const typesForCategory = CLOTHING_TYPES[editForm.category] || CLOTHING_TYPES.top || [];
 
   const startEdit = () => {
@@ -192,7 +196,7 @@ const ClothingItem = ({ item, id, onDelete, onUpdate }) => {
         {item?.description && <p style={{ fontSize: '0.72rem', color: '#6b7280', fontStyle: 'italic', lineHeight: 1.4, margin: '0.2rem 0' }}>{item.description}</p>}
         <p><strong>Worn:</strong> {wearCount ?? 0}×</p>
         <p><strong>Price:</strong> {purchasePrice ? `₹${Number(purchasePrice).toLocaleString('en-IN')}` : '—'}</p>
-        <p><strong>CPW:</strong> {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
+        <p><strong>CPW:</strong> {cpwDisplay}</p>
         <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
           <button type="button" onClick={startEdit}
             style={{ flex: 1, padding: '0.4rem 0', background: '#ede9fe', color: '#7c3aed', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>

@@ -50,9 +50,9 @@ const expectedWearCountForPrice = (price) => {
 export const calculateAdjustedCostPerWear = (price, wearCount) => {
   const p = Number(price) || 0;
   const w = Number(wearCount) || 0;
-  const baseline = expectedWearCountForPrice(p);
-  const effective = Math.max(w, baseline);
-  return effective > 0 ? p / effective : p;
+  // Only calculate CPW when actually worn — never fake it with a baseline
+  if (w === 0) return null; // null = not worn yet
+  return p / w;
 };
 
 export const identifyUnderutilized = (items, thresholdDays = 30) => {

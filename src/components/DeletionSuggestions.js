@@ -46,6 +46,7 @@ const DeletionSuggestions = ({ items, onDeleteItem, maxItems = 50 }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {suggestions.map(item => {
             const cpw = calculateAdjustedCostPerWear(item.purchasePrice ?? 0, item.wearCount ?? 0);
+            const cpwText = cpw === null ? 'Not worn' : formatINR(cpw, { maximumFractionDigits: 0 });
             return (
               <div key={item.id} style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -72,7 +73,7 @@ const DeletionSuggestions = ({ items, onDeleteItem, maxItems = 50 }) => {
                 {/* Stats + action */}
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <p style={{ margin: 0, fontSize: '0.72rem', color: '#6b7280' }}>Worn {item.wearCount ?? 0}×</p>
-                  <p style={{ margin: '0.1rem 0 0.4rem', fontSize: '0.72rem', color: '#6b7280' }}>CPW {formatINR(cpw, { maximumFractionDigits: 0 })}</p>
+                  <p style={{ margin: '0.1rem 0 0.4rem', fontSize: '0.72rem', color: '#6b7280' }}>CPW {cpwText}</p>
                   <button
                     onClick={() => onDeleteItem(item.id)}
                     style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}

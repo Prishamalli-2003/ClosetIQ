@@ -154,10 +154,10 @@ const Analytics = () => {
                 {underutilized.map((item) => (
                   <li key={item.id}>
                     {item.name || item.category} – {item.color} – worn {item.wearCount ?? 0} times – CPW:{' '}
-                    {formatINR(
-                      calculateAdjustedCostPerWear(item.purchasePrice ?? 0, item.wearCount ?? 0),
-                      { maximumFractionDigits: 0 }
-                    )}
+                    {(() => {
+                      const cpw = calculateAdjustedCostPerWear(item.purchasePrice ?? 0, item.wearCount ?? 0);
+                      return cpw === null ? 'Not worn yet' : formatINR(cpw, { maximumFractionDigits: 0 });
+                    })()}
                   </li>
                 ))}
               </ul>
