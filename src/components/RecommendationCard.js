@@ -25,7 +25,7 @@ const ItemTile = ({ label, item }) => {
 };
 
 const RecommendationCard = ({ recommendation, index }) => {
-  const { top, bottom, dress, traditional, outerwear, explanation } = recommendation || {};
+  const { top, bottom, dress, traditional, outerwear, accessory, shoes, explanation } = recommendation || {};
 
   return (
     <div className="recommendation-card">
@@ -39,6 +39,8 @@ const RecommendationCard = ({ recommendation, index }) => {
         <ItemTile label="👕 Top"         item={top} />
         <ItemTile label="👖 Bottom"      item={bottom} />
         <ItemTile label="🧥 Outerwear"   item={outerwear} />
+        <ItemTile label="👜 Bag"         item={accessory} />
+        <ItemTile label="👠 Shoes"       item={shoes} />
       </div>
 
       {explanation && (

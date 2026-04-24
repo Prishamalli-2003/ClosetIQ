@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { db, auth } from '../services/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { calculateAdjustedCostPerWear } from '../services/analyticsLogic';
+import { calculateAdjustedCostPerWear, getTargetCPW, getCPWAssessment } from '../services/analyticsLogic';
 import { formatINR } from '../utils/currency';
 import { COLOR_PALETTE, CLOTHING_CATEGORIES, CLOTHING_TYPES } from '../utils/constants';
 import { prepareImageForUpload } from '../services/imageProcessor';
@@ -29,11 +29,13 @@ const ClothingItem = ({ item, id, onDelete, onUpdate }) => {
   const userId = auth.currentUser?.uid;
 
   const { name, category, type, color, imageUrl, wearCount, purchasePrice } = item || {};
-  const cpw = calculateAdjustedCostPerWear(purchasePrice ?? 0, wearCount ?? 0);
-  // cpw is null when never worn
+  const cpw = calculateAdjustedCostPerWear(purchasePrice ?? 0, wearCount ?? 0, category, type);
+  const { targetCPW, expectedWears } = getTargetCPW(purchasePrice ?? 0, category, type);
+  const assessment = getCPWAssessment(purchasePrice ?? 0, wearCount ?? 0, category, type);
+
   const cpwDisplay = cpw === null
-    ? <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Not worn yet</span>
-    : formatINR(cpw, { maximumFractionDigits: 0 });
+    ? <span style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.72rem' }}>Not worn yet · target ₹{targetCPW?.toLocaleString('en-IN')} in {expectedWears} wears</span>
+    : <span>{formatINR(cpw, { maximumFractionDigits: 0 })} {assessment && <span style={{ fontSize: '0.68rem', color: assessment.color, fontWeight: 600 }}>{assessment.label}</span>}</span>;
   const typesForCategory = CLOTHING_TYPES[editForm.category] || CLOTHING_TYPES.top || [];
 
   const startEdit = () => {

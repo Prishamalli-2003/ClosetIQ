@@ -40,19 +40,141 @@ export const calculateSmartCostPerWear = (price, wearCount, category = '', type 
   return p / w;
 };
 
-const expectedWearCountForPrice = (price) => {
-  const p = Number(price) || 0;
-  if (p >= 8000) return 6;
-  if (p >= 4000) return 15;
-  return 30;
+// ─── SMART CPW LOGIC ─────────────────────────────────────────────────────────
+//
+// CPW = Price ÷ Actual Wears (only when worn ≥ 1 time)
+//
+// For context we also show a "target CPW" — what the CPW would be
+// if worn the expected number of times for that item type/price.
+//
+// Expected wear counts by category & price:
+//   Everyday casual (t-shirt, jeans, leggings) → 50 wears/year
+//   Office/smart casual (shirt, blazer, trousers) → 20 wears/year
+//   Party/cocktail dress → 5 wears/year
+//   Wedding/formal saree (₹5k–₹20k) → 8 wears lifetime
+//   Designer/heirloom saree (₹20k+) → 3 wears lifetime
+//   Shoes (everyday) → 40 wears/year
+//   Accessories (bag, watch) → 100 wears/year (daily use)
+
+const EXPECTED_WEARS = {
+  // Traditional
+  saree_budget:    8,   // < ₹5,000 — worn more often
+  saree_mid:       6,   // ₹5k–₹20k
+  saree_premium:   3,   // ₹20k+ — heirloom, worn rarely
+  lehenga:         2,   // worn 1-2 times
+  anarkali:        8,
+  kurti:           30,  // daily/casual
+  salwar_kameez:   15,
+  // Dresses
+  sundress:        20,
+  casual_dress:    15,
+  midi_dress:      10,
+  cocktail_dress:  5,
+  evening_gown:    3,
+  formal_dress:    5,
+  // Tops
+  't-shirt':       50,
+  shirt:           25,
+  blouse:          20,
+  hoodie:          30,
+  sweater:         20,
+  'crop-top':      25,
+  camisole:        40,
+  tank:            40,
+  bodysuit:        20,
+  polo:            25,
+  // Bottoms
+  jeans:           50,
+  trousers:        25,
+  skirt:           20,
+  leggings:        40,
+  palazzo:         20,
+  chinos:          25,
+  joggers:         30,
+  shorts:          30,
+  culottes:        15,
+  // Outerwear
+  jacket:          20,
+  coat:            15,
+  blazer:          20,
+  cardigan:        25,
+  shawl:           10,
+  // Shoes
+  sneakers:        50,
+  boots:           25,
+  heels:           15,
+  sandals:         20,
+  'ballet-flats':  30,
+  loafers:         25,
+  stilettos:       10,
+  // Accessories
+  handbag:         100,
+  bag:             80,
+  watch:           200,
+  jewelry:         50,
+  belt:            60,
+  clutch:          10,
+  backpack:        80,
+  scarf:           20,
 };
 
-export const calculateAdjustedCostPerWear = (price, wearCount) => {
+const getExpectedWears = (category, type, price) => {
+  const p = Number(price) || 0;
+
+  // Sarees — price-tiered
+  if (type === 'saree') {
+    if (p >= 20000) return EXPECTED_WEARS.saree_premium;
+    if (p >= 5000)  return EXPECTED_WEARS.saree_mid;
+    return EXPECTED_WEARS.saree_budget;
+  }
+
+  // Lehenga — almost always worn once or twice
+  if (type === 'lehenga') return EXPECTED_WEARS.lehenga;
+
+  // Look up by type first
+  const byType = EXPECTED_WEARS[type] || EXPECTED_WEARS[type?.replace('-', '_')];
+  if (byType) return byType;
+
+  // Fallback by category
+  const fallbacks = { top: 30, bottom: 30, dress: 10, traditional: 8, outerwear: 20, shoes: 30, accessory: 60 };
+  return fallbacks[category] || 20;
+};
+
+/**
+ * Returns actual CPW (price ÷ wears) when worn ≥ 1 time.
+ * Returns null when never worn.
+ */
+export const calculateAdjustedCostPerWear = (price, wearCount, category = '', type = '') => {
   const p = Number(price) || 0;
   const w = Number(wearCount) || 0;
-  // Only calculate CPW when actually worn — never fake it with a baseline
-  if (w === 0) return null; // null = not worn yet
+  if (w === 0) return null; // not worn yet
   return p / w;
+};
+
+/**
+ * Returns the target CPW — what CPW would be if worn the expected number of times.
+ * Used to show "you're getting good value" vs "you need to wear this more".
+ */
+export const getTargetCPW = (price, category, type) => {
+  const p = Number(price) || 0;
+  const expected = getExpectedWears(category, type, p);
+  return { targetCPW: Math.round(p / expected), expectedWears: expected };
+};
+
+/**
+ * Returns a value assessment string based on actual vs target CPW.
+ */
+export const getCPWAssessment = (price, wearCount, category, type) => {
+  const p = Number(price) || 0;
+  const w = Number(wearCount) || 0;
+  if (w === 0) return null;
+
+  const actualCPW = p / w;
+  const { targetCPW, expectedWears } = getTargetCPW(p, category, type);
+
+  if (actualCPW <= targetCPW) return { label: '✅ Great value', color: '#22c55e' };
+  if (actualCPW <= targetCPW * 2) return { label: '⚡ Wear more', color: '#f59e0b' };
+  return { label: `👗 Wear ${expectedWears - w} more times`, color: '#ef4444' };
 };
 
 export const identifyUnderutilized = (items, thresholdDays = 30) => {
@@ -269,6 +391,8 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   const dresses    = wardrobe.filter(i => i.category === 'dress');
   const traditional = wardrobe.filter(i => i.category === 'traditional');
   const outerwear  = wardrobe.filter(i => i.category === 'outerwear');
+  const accessories = wardrobe.filter(i => i.category === 'accessory');
+  const shoes      = wardrobe.filter(i => i.category === 'shoes');
 
   const weather     = context.weather     || 'moderate';
   const formality   = context.formality   || 'casual';
@@ -371,12 +495,24 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
       // Western outerwear for dresses (blazer/jacket)
       const ow = findWesternOuterwear(dress.color);
 
+      // Suggest matching accessories for dresses
+      const accessory = accessories.find(a =>
+        ['clutch', 'handbag'].includes(a.type) &&
+        (neutrals.includes(a.color) || a.color === dress.color)
+      );
+      const shoe = shoes.find(s =>
+        ['heels', 'stilettos', 'sandals'].includes(s.type) &&
+        (neutrals.includes(s.color) || s.color === dress.color)
+      );
+
       recommendations.push({
         dress,
         outerwear: ow || null,
+        accessory: accessory || null,
+        shoes: shoe || null,
         score,
         outfitType: 'dress',
-        explanation: `${dress.name} (${dress.color})${ow ? ' + ' + ow.name : ''} — ${reasons.join(', ') || 'elegant standalone look'}.`,
+        explanation: `${dress.name} (${dress.color})${ow ? ' + ' + ow.name : ''}${accessory ? ' · ' + accessory.name : ''}${shoe ? ' · ' + shoe.name : ''} — ${reasons.join(', ') || 'elegant standalone look'}.`,
       });
     });
   }
@@ -434,12 +570,23 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
         const ow = findWesternOuterwear(top.color);
         if (ow) { score += 1; reasons.push('layered for cooler weather'); }
 
+        // Suggest a matching accessory (bag or jewelry) for 1-2 outfits
+        const accessory = accessories.find(a =>
+          ['handbag', 'bag', 'clutch'].includes(a.type) &&
+          (neutrals.includes(a.color) || a.color === top.color || a.color === bottom.color)
+        );
+        const shoe = shoes.find(s =>
+          neutrals.includes(s.color) || s.color === bottom.color
+        );
+
         recommendations.push({
           top, bottom,
           outerwear: ow || null,
+          accessory: accessory || null,
+          shoes: shoe || null,
           score,
           outfitType: 'top+bottom',
-          explanation: `${top.name} + ${bottom.name}${ow ? ' + ' + ow.name : ''} — ${reasons.join(', ') || 'versatile combination'}.`,
+          explanation: `${top.name} + ${bottom.name}${ow ? ' + ' + ow.name : ''}${accessory ? ' · ' + accessory.name : ''}${shoe ? ' · ' + shoe.name : ''} — ${reasons.join(', ') || 'versatile combination'}.`,
         });
       });
     });
