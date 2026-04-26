@@ -50,20 +50,19 @@ const Recommendations = () => {
     setShowResults(true);
     setGenerating(true);
 
-    // Build a cache key from the context
-    const key = `${destination}-${weather}-${formality}-${mood}-${style}`;
+    // Build a unique cache key from ALL context fields
+    const key = `${destination}-${weather}-${formality}-${mood}-${style}-${colorPreference}`;
     setCacheKey(key);
 
     try {
-      // Check Firestore cache first
+      // Check Firestore cache — only use if less than 30 minutes old
       const cacheRef = doc(db, 'users', userId, 'recommendationCache', key);
       const cached = await getDoc(cacheRef);
 
       if (cached.exists()) {
         const data = cached.data();
-        // Use cache if less than 1 hour old
         const age = Date.now() - (data.generatedAt?.toMillis?.() || 0);
-        if (age < 60 * 60 * 1000) {
+        if (age < 30 * 60 * 1000) { // 30 min cache
           setRecommendations(data.recommendations || []);
           setGenerating(false);
           return;

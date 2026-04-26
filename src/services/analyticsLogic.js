@@ -472,11 +472,37 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
     return true;
   };
 
-  // Weather filter
+  // Weather filter — STRICT exclusions
   const weatherOk = (item) => {
-    if (weather === 'hot') return !['sweater', 'coat', 'turtleneck', 'hoodie'].includes(item.type);
-    if (weather === 'cold') return !['tank', 'shorts', 'camisole', 'sundress'].includes(item.type);
+    if (weather === 'hot') {
+      return !['sweater', 'coat', 'turtleneck', 'hoodie', 'blazer', 'jacket', 'cardigan'].includes(item.type);
+    }
+    if (weather === 'warm') {
+      return !['coat', 'turtleneck'].includes(item.type);
+    }
+    if (weather === 'cold') {
+      return !['tank', 'shorts', 'camisole', 'sundress', 'crop-top'].includes(item.type);
+    }
+    if (weather === 'cool') {
+      return !['tank', 'shorts', 'camisole'].includes(item.type);
+    }
     return true;
+  };
+
+  // Weather scoring bonus — makes weather-appropriate items rank higher
+  const weatherScore = (item) => {
+    if (weather === 'hot' || weather === 'warm') {
+      if (['t-shirt', 'tank', 'camisole', 'crop-top', 'sundress', 'shorts'].includes(item.type)) return 3;
+      if (['blouse', 'shirt', 'midi-dress', 'maxi-dress'].includes(item.type)) return 1;
+      return 0;
+    }
+    if (weather === 'cold' || weather === 'cool') {
+      if (['sweater', 'hoodie', 'turtleneck', 'cardigan'].includes(item.type)) return 3;
+      if (['blazer', 'jacket', 'coat'].includes(item.type)) return 2;
+      if (['jeans', 'trousers', 'leggings'].includes(item.type)) return 1;
+      return 0;
+    }
+    return 0;
   };
 
   // Find appropriate outerwear for traditional items (shawl/cape only)
@@ -602,11 +628,14 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
         if ((mood === 'confident' || mood === 'excited') && (!topNeutral || !botNeutral)) {
           score += 1; reasons.push('bold combo matching your energy');
         }
-        if (weather === 'hot' && ['t-shirt', 'tank', 'camisole'].includes(top.type)) {
-          score += 1; reasons.push('light and breathable');
-        }
-        if (weather === 'cold' && ['sweater', 'hoodie'].includes(top.type)) {
-          score += 1; reasons.push('warm and cosy');
+
+        // Weather scoring — strong bonus for appropriate items
+        const topWeatherScore = weatherScore(top);
+        const botWeatherScore = weatherScore(bottom);
+        score += topWeatherScore + botWeatherScore;
+        if (topWeatherScore > 0 || botWeatherScore > 0) {
+          if (weather === 'hot' || weather === 'warm') reasons.push('perfect for warm weather');
+          else if (weather === 'cold' || weather === 'cool') reasons.push('warm & cosy for cool weather');
         }
         if (['work', 'formal'].includes(destination) &&
             ['shirt', 'blouse', 'polo'].includes(top.type) &&
