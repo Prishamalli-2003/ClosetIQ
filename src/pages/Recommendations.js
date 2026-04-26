@@ -51,7 +51,7 @@ const Recommendations = () => {
     setGenerating(true);
 
     // Build a cache key from the context
-    const key = `${destination}-${weather}-${formality}-${mood}`;
+    const key = `${destination}-${weather}-${formality}-${mood}-${style}`;
     setCacheKey(key);
 
     try {

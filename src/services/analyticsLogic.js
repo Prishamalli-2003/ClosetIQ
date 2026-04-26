@@ -406,13 +406,51 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   const formality   = context.formality   || 'casual';
   const mood        = context.mood        || null;
   const destination = context.destination || 'casual';
+  const style       = context.style       || 'any';
+
+  // If style vibe is "traditional" or "bohemian", force traditional rules
+  const isTraditionalStyle = style === 'traditional' || style === 'bohemian';
 
   // Get rules for this occasion — smart fallback
-  const rules = OCCASION_RULES[destination] ||
-    // If destination contains traditional keywords, use wedding rules
-    (/wedding|festival|religious|puja|temple|traditional/i.test(destination || '')
-      ? OCCASION_RULES.wedding
-      : OCCASION_RULES.casual);
+  let rules;
+  if (isTraditionalStyle) {
+    // Style override: traditional vibe → always show traditional/dress
+    rules = { allow: ['traditional', 'dress'], priority: ['traditional'] };
+  } else {
+    rules = OCCASION_RULES[destination] ||
+      (/wedding|festival|religious|puja|temple|traditional/i.test(destination || '')
+        ? OCCASION_RULES.wedding
+        : OCCASION_RULES.casual);
+  }
+
+  // Weather-based traditional filter:
+  // Hot/warm → prefer cotton, georgette, chiffon, kurti (lightweight)
+  // Cool/cold → prefer silk sarees, lehengas (heavier)
+  const traditionalWeatherOk = (item) => {
+    const lightTypes = ['kurti', 'salwar-kameez', 'churidar'];
+    const heavyTypes = ['saree', 'lehenga', 'anarkali', 'sharara', 'gharara'];
+    if (weather === 'hot' || weather === 'warm') {
+      // Prefer light traditional wear; still allow sarees but deprioritise heavy ones
+      return true; // allow all, scoring handles preference
+    }
+    if (weather === 'cold') {
+      // Prefer heavier traditional wear
+      return true;
+    }
+    return true;
+  };
+
+  // Scoring bonus for weather-appropriate traditional wear
+  const traditionalWeatherBonus = (item) => {
+    const lightFabrics = ['cotton', 'chiffon', 'georgette', 'linen', 'khadi'];
+    const heavyFabrics = ['silk', 'brocade', 'velvet', 'organza'];
+    const desc = (item.description || item.name || '').toLowerCase();
+    if ((weather === 'hot' || weather === 'warm') && lightFabrics.some(f => desc.includes(f))) return 2;
+    if ((weather === 'hot' || weather === 'warm') && (item.type === 'kurti' || item.type === 'salwar-kameez')) return 2;
+    if ((weather === 'cold' || weather === 'cool') && heavyFabrics.some(f => desc.includes(f))) return 2;
+    if ((weather === 'cold' || weather === 'cool') && (item.type === 'saree' || item.type === 'lehenga')) return 1;
+    return 0;
+  };
   const allowedTypes = rules.allow;
   const priorityTypes = rules.priority;
 
@@ -471,6 +509,14 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
       if (favColors.includes(item.color)) { score += 1; reasons.push('your favourite colour'); }
       if (['wedding', 'festival', 'religious', 'party'].includes(destination)) {
         score += 2; reasons.push(`perfect for ${destination}`);
+      }
+
+      // Weather-appropriate bonus
+      const wb = traditionalWeatherBonus(item);
+      if (wb > 0) {
+        score += wb;
+        if (weather === 'hot' || weather === 'warm') reasons.push('lightweight for warm weather');
+        else if (weather === 'cold' || weather === 'cool') reasons.push('warm fabric for cool weather');
       }
 
       // Traditional outerwear only (shawl/cape) — NO leather jackets
