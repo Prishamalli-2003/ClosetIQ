@@ -363,17 +363,25 @@ const getDeletionReason = (item) => {
 // ─── OUTFIT CATEGORY RULES ────────────────────────────────────────────────────
 // Maps occasion/destination to which outfit categories are appropriate
 const OCCASION_RULES = {
-  wedding:    { allow: ['traditional', 'dress'],          priority: ['traditional'] },
-  festival:   { allow: ['traditional', 'dress'],          priority: ['traditional'] },
-  religious:  { allow: ['traditional'],                   priority: ['traditional'] },
-  party:      { allow: ['dress', 'traditional', 'top+bottom'], priority: ['dress'] },
-  formal:     { allow: ['dress', 'top+bottom'],           priority: ['dress'] },
-  work:       { allow: ['top+bottom'],                    priority: ['top+bottom'] },
-  casual:     { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
-  date:       { allow: ['dress', 'top+bottom'],           priority: ['dress'] },
-  sport:      { allow: ['top+bottom'],                    priority: ['top+bottom'] },
-  travel:     { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
-  shopping:   { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
+  // Traditional occasions — ONLY traditional wear, no western
+  wedding:           { allow: ['traditional', 'dress'],          priority: ['traditional'] },
+  festival:          { allow: ['traditional', 'dress'],          priority: ['traditional'] },
+  religious:         { allow: ['traditional'],                   priority: ['traditional'] },
+  'family-gathering':{ allow: ['traditional', 'dress', 'top+bottom'], priority: ['traditional'] },
+  graduation:        { allow: ['dress', 'traditional', 'top+bottom'], priority: ['dress'] },
+  // Party / social
+  party:             { allow: ['dress', 'traditional', 'top+bottom'], priority: ['dress'] },
+  date:              { allow: ['dress', 'top+bottom'],           priority: ['dress'] },
+  // Formal / work
+  formal:            { allow: ['dress', 'top+bottom'],           priority: ['dress'] },
+  work:              { allow: ['top+bottom'],                    priority: ['top+bottom'] },
+  interview:         { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
+  // Casual
+  casual:            { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
+  shopping:          { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
+  travel:            { allow: ['top+bottom', 'dress'],           priority: ['top+bottom'] },
+  // Sport
+  sport:             { allow: ['top+bottom'],                    priority: ['top+bottom'] },
 };
 
 // Outerwear that pairs with traditional wear (shawls, dupattas only)
@@ -399,8 +407,12 @@ export const generateOutfitRecommendations = (wardrobe, preferences = {}, contex
   const mood        = context.mood        || null;
   const destination = context.destination || 'casual';
 
-  // Get rules for this occasion
-  const rules = OCCASION_RULES[destination] || OCCASION_RULES.casual;
+  // Get rules for this occasion — smart fallback
+  const rules = OCCASION_RULES[destination] ||
+    // If destination contains traditional keywords, use wedding rules
+    (/wedding|festival|religious|puja|temple|traditional/i.test(destination || '')
+      ? OCCASION_RULES.wedding
+      : OCCASION_RULES.casual);
   const allowedTypes = rules.allow;
   const priorityTypes = rules.priority;
 
