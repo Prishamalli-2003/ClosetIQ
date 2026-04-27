@@ -119,15 +119,24 @@ export const prepareImageForUpload = async (file, options = {}) => {
   if (!looksLikeImage(file)) throw new Error('Please choose a valid image.');
 
   try {
-    const resized    = await resizeToBlob(file, options.maxWidth || MAX_SIZE);
-    const bgRemoved  = await removeBackgroundViaProxy(resized);
-    const base64     = await addWhiteBackground(bgRemoved);
-    console.log('✅ Background removed successfully');
+    console.log('🔄 Resizing image...');
+    const resized = await resizeToBlob(file, options.maxWidth || MAX_SIZE);
+    console.log(`📦 Resized to ${resized.size} bytes, calling remove.bg proxy...`);
+
+    const bgRemoved = await removeBackgroundViaProxy(resized);
+    console.log('✅ Background removed! Adding white background...');
+
+    const base64 = await addWhiteBackground(bgRemoved);
+    console.log('🎉 Done — ghost mannequin effect applied');
     return { base64, previewUrl: base64 };
   } catch (err) {
-    console.warn('⚠️ Background removal failed:', err.message, '— using white background fallback');
+    console.error('❌ Background removal failed:', err.message);
+    // Show the error to the user briefly
+    if (typeof window !== 'undefined') {
+      window._bgRemoveError = err.message;
+    }
     const base64 = await fallbackProcess(file);
-    return { base64, previewUrl: base64 };
+    return { base64, previewUrl: base64, bgRemoveError: err.message };
   }
 };
 

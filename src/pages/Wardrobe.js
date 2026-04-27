@@ -39,9 +39,13 @@ const Wardrobe = () => {
     if (!file) return;
     setProcessing(true);
     try {
-      const { base64, previewUrl } = await prepareImageForUpload(file, { maxWidth: 400, quality: 0.65 });
-      setImagePreviewUrl(previewUrl);
-      setForm((f) => ({ ...f, imageBase64: base64 }));
+      const result = await prepareImageForUpload(file, { maxWidth: 400, quality: 0.65 });
+      setImagePreviewUrl(result.previewUrl);
+      setForm((f) => ({ ...f, imageBase64: result.base64 }));
+      if (result.bgRemoveError) {
+        console.warn("BG remove failed:", result.bgRemoveError);
+        // Show brief status — background removal failed, using original
+      }
     } catch { alert("Could not process image."); }
     finally { setProcessing(false); }
   };
