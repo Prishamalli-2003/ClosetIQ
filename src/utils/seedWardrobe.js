@@ -374,5 +374,69 @@ export const clearWardrobe = async () => {
   }
 };
 
+
+/**
+ * Adds everyday outfit logs to the EXISTING wardrobe without replacing any items.
+ * Matches log names to existing wardrobe items and updates wear counts.
+ */
+export const addOutfitLogs = async () => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) return { success: false, message: "Not logged in" };
+  try {
+    // Load existing wardrobe
+    const wardrobeRef = collection(db, "users", userId, "wardrobe");
+    const wardrobeSnap = await getDocs(wardrobeRef);
+    const wardrobe = wardrobeSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (wardrobe.length === 0) {
+      return { success: false, message: "Your wardrobe is empty. Load sample items first." };
+    }
+
+    const logsRef = collection(db, "users", userId, "outfitLogs");
+    const wearCounts = {};
+    const lastWornDates = {};
+    let logsAdded = 0;
+
+    for (const log of SAMPLE_LOGS) {
+      const item = wardrobe.find(i => i.name === log.name);
+      if (!item) continue;
+      await addDoc(logsRef, {
+        date: log.date, occasion: log.occasion, mood: log.mood,
+        itemIds: [item.id], itemCount: 1, description: log.description,
+        totalOutfitValue: item.purchasePrice || 0, createdAt: serverTimestamp(),
+      });
+      wearCounts[item.id] = (wearCounts[item.id] || 0) + 1;
+      if (!lastWornDates[item.id] || log.date > lastWornDates[item.id]) {
+        lastWornDates[item.id] = log.date;
+      }
+      logsAdded++;
+    }
+
+    // Update wear counts on wardrobe items
+    const { updateDoc, doc } = await import("firebase/firestore");
+    for (const [itemId, count] of Object.entries(wearCounts)) {
+      const existing = wardrobe.find(i => i.id === itemId);
+      const currentWears = existing?.wearCount || 0;
+      await updateDoc(doc(db, "users", userId, "wardrobe", itemId), {
+        wearCount: currentWears + count,
+        lastWorn: lastWornDates[itemId] || null,
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    // Update user stats
+    try {
+      const { updateDoc: ud, doc: d, increment } = await import("firebase/firestore");
+      await ud(d(db, "users", userId), {
+        "stats.totalOutfitLogs": increment(logsAdded),
+        "stats.lastUpdated": serverTimestamp(),
+      });
+    } catch (_) {}
+
+    return { success: true, message: `Added ${logsAdded} outfit logs to your existing wardrobe!` };
+  } catch (err) {
+    return { success: false, message: "Error: " + err.message };
+  }
+};
 export const SEED_ITEMS = ALL_ITEMS;
 export const FEMALE_ITEMS = ALL_ITEMS;

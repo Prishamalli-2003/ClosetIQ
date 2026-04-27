@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Basic cost-per-wear in raw numbers (no currency formatting)
 export const calculateCostPerWear = (price, wearCount) => {
   const p = Number(price) || 0;

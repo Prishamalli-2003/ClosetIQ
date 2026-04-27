@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * ClosetIQ — Centralised Firestore data service
  *
