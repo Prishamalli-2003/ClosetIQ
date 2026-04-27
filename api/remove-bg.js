@@ -1,83 +1,80 @@
-// Vercel serverless function — proxies remove.bg to avoid browser CORS
-// POST /api/remove-bg  { imageBase64: "data:image/jpeg;base64,..." }
+// Vercel serverless function — tries multiple background removal services
+// Priority: remove.bg → Photoroom → fallback (white background only)
 
 export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
 export default async function handler(req, res) {
-  // Allow CORS from same origin
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.REMOVE_BG_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'REMOVE_BG_KEY not set in Vercel environment variables' });
-  }
-
   const { imageBase64 } = req.body || {};
-  if (!imageBase64) return res.status(400).json({ error: 'No imageBase64 in request body' });
+  if (!imageBase64) return res.status(400).json({ error: 'No imageBase64 provided' });
 
-  try {
-    // Strip data URL prefix and convert to Buffer
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Data, 'base64');
+  const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+  const imageBuffer = Buffer.from(base64Data, 'base64');
 
-    // Build multipart form manually (no external deps needed)
-    const boundary = `----FormBoundary${Date.now()}`;
-    const CRLF = '\r\n';
+  // ── Try remove.bg ──────────────────────────────────────────────────────
+  const removeBgKey = process.env.REMOVE_BG_KEY;
+  if (removeBgKey) {
+    try {
+      const boundary = `----FormBoundary${Date.now()}`;
+      const CRLF = '\r\n';
+      const body = Buffer.concat([
+        Buffer.from(`--${boundary}${CRLF}Content-Disposition: form-data; name="image_file"; filename="photo.jpg"${CRLF}Content-Type: image/jpeg${CRLF}${CRLF}`, 'utf8'),
+        imageBuffer,
+        Buffer.from(`${CRLF}--${boundary}${CRLF}Content-Disposition: form-data; name="size"${CRLF}${CRLF}auto${CRLF}--${boundary}${CRLF}Content-Disposition: form-data; name="bg_color"${CRLF}${CRLF}ffffff${CRLF}--${boundary}--${CRLF}`, 'utf8'),
+      ]);
 
-    const partHeader =
-      `--${boundary}${CRLF}` +
-      `Content-Disposition: form-data; name="image_file"; filename="photo.jpg"${CRLF}` +
-      `Content-Type: image/jpeg${CRLF}${CRLF}`;
+      const r = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: { 'X-Api-Key': removeBgKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+        body,
+      });
 
-    const sizeField =
-      `${CRLF}--${boundary}${CRLF}` +
-      `Content-Disposition: form-data; name="size"${CRLF}${CRLF}` +
-      `auto`;
-
-    const bgField =
-      `${CRLF}--${boundary}${CRLF}` +
-      `Content-Disposition: form-data; name="bg_color"${CRLF}${CRLF}` +
-      `ffffff`;
-
-    const closing = `${CRLF}--${boundary}--${CRLF}`;
-
-    const body = Buffer.concat([
-      Buffer.from(partHeader, 'utf8'),
-      imageBuffer,
-      Buffer.from(sizeField + bgField + closing, 'utf8'),
-    ]);
-
-    const response = await fetch('https://api.remove.bg/v1.0/removebg', {
-      method: 'POST',
-      headers: {
-        'X-Api-Key': apiKey,
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Content-Length': body.length,
-      },
-      body,
-    });
-
-    if (!response.ok) {
-      let errMsg = `remove.bg returned ${response.status}`;
-      try {
-        const errData = await response.json();
-        errMsg = errData?.errors?.[0]?.title || errMsg;
-      } catch (_) {}
-      return res.status(response.status).json({ error: errMsg });
+      if (r.ok) {
+        const buf = Buffer.from(await r.arrayBuffer());
+        return res.status(200).json({ base64: `data:image/png;base64,${buf.toString('base64')}`, service: 'remove.bg' });
+      }
+      console.warn('remove.bg failed:', r.status);
+    } catch (e) {
+      console.warn('remove.bg error:', e.message);
     }
-
-    // Result is a PNG binary
-    const resultBuffer = Buffer.from(await response.arrayBuffer());
-    const resultBase64 = `data:image/png;base64,${resultBuffer.toString('base64')}`;
-
-    return res.status(200).json({ base64: resultBase64 });
-  } catch (err) {
-    console.error('remove-bg proxy error:', err);
-    return res.status(500).json({ error: err.message });
   }
+
+  // ── Try Photoroom ──────────────────────────────────────────────────────
+  const photoroomKey = process.env.PHOTOROOM_KEY;
+  if (photoroomKey) {
+    try {
+      const boundary = `----FormBoundary${Date.now()}`;
+      const CRLF = '\r\n';
+      const body = Buffer.concat([
+        Buffer.from(`--${boundary}${CRLF}Content-Disposition: form-data; name="image_file"; filename="photo.jpg"${CRLF}Content-Type: image/jpeg${CRLF}${CRLF}`, 'utf8'),
+        imageBuffer,
+        Buffer.from(`${CRLF}--${boundary}--${CRLF}`, 'utf8'),
+      ]);
+
+      const r = await fetch('https://sdk.photoroom.com/v1/segment', {
+        method: 'POST',
+        headers: { 'x-api-key': photoroomKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+        body,
+      });
+
+      if (r.ok) {
+        const buf = Buffer.from(await r.arrayBuffer());
+        return res.status(200).json({ base64: `data:image/png;base64,${buf.toString('base64')}`, service: 'photoroom' });
+      }
+      console.warn('Photoroom failed:', r.status);
+    } catch (e) {
+      console.warn('Photoroom error:', e.message);
+    }
+  }
+
+  // ── No service available ───────────────────────────────────────────────
+  return res.status(402).json({
+    error: 'Background removal credits exhausted. Please add a new API key.',
+    hint: 'Get a free key at remove.bg/api (50 free/month) or photoroom.com/api (100 free/month)'
+  });
 }
