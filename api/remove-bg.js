@@ -1,5 +1,7 @@
-// Vercel serverless function — tries multiple background removal services
-// Priority: remove.bg → Photoroom → fallback (white background only)
+/**
+ * Vercel serverless function — background removal proxy
+ * Tries multiple services in order until one works
+ */
 
 export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
@@ -16,65 +18,87 @@ export default async function handler(req, res) {
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
   const imageBuffer = Buffer.from(base64Data, 'base64');
 
-  // ── Try remove.bg ──────────────────────────────────────────────────────
+  // ── 1. Try remove.bg ──────────────────────────────────────────────────
   const removeBgKey = process.env.REMOVE_BG_KEY;
   if (removeBgKey) {
     try {
-      const boundary = `----FormBoundary${Date.now()}`;
-      const CRLF = '\r\n';
-      const body = Buffer.concat([
-        Buffer.from(`--${boundary}${CRLF}Content-Disposition: form-data; name="image_file"; filename="photo.jpg"${CRLF}Content-Type: image/jpeg${CRLF}${CRLF}`, 'utf8'),
-        imageBuffer,
-        Buffer.from(`${CRLF}--${boundary}${CRLF}Content-Disposition: form-data; name="size"${CRLF}${CRLF}auto${CRLF}--${boundary}${CRLF}Content-Disposition: form-data; name="bg_color"${CRLF}${CRLF}ffffff${CRLF}--${boundary}--${CRLF}`, 'utf8'),
-      ]);
-
-      const r = await fetch('https://api.remove.bg/v1.0/removebg', {
-        method: 'POST',
-        headers: { 'X-Api-Key': removeBgKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-        body,
-      });
-
-      if (r.ok) {
-        const buf = Buffer.from(await r.arrayBuffer());
-        return res.status(200).json({ base64: `data:image/png;base64,${buf.toString('base64')}`, service: 'remove.bg' });
-      }
-      console.warn('remove.bg failed:', r.status);
-    } catch (e) {
-      console.warn('remove.bg error:', e.message);
-    }
+      const result = await callRemoveBg(imageBuffer, removeBgKey);
+      if (result) return res.status(200).json({ base64: result, service: 'remove.bg' });
+    } catch (e) { console.warn('remove.bg:', e.message); }
   }
 
-  // ── Try Photoroom ──────────────────────────────────────────────────────
+  // ── 2. Try ClipDrop ───────────────────────────────────────────────────
+  const clipdropKey = process.env.CLIPDROP_KEY;
+  if (clipdropKey) {
+    try {
+      const result = await callClipdrop(imageBuffer, clipdropKey);
+      if (result) return res.status(200).json({ base64: result, service: 'clipdrop' });
+    } catch (e) { console.warn('clipdrop:', e.message); }
+  }
+
+  // ── 3. Try Photoroom ──────────────────────────────────────────────────
   const photoroomKey = process.env.PHOTOROOM_KEY;
   if (photoroomKey) {
     try {
-      const boundary = `----FormBoundary${Date.now()}`;
-      const CRLF = '\r\n';
-      const body = Buffer.concat([
-        Buffer.from(`--${boundary}${CRLF}Content-Disposition: form-data; name="image_file"; filename="photo.jpg"${CRLF}Content-Type: image/jpeg${CRLF}${CRLF}`, 'utf8'),
-        imageBuffer,
-        Buffer.from(`${CRLF}--${boundary}--${CRLF}`, 'utf8'),
-      ]);
-
-      const r = await fetch('https://sdk.photoroom.com/v1/segment', {
-        method: 'POST',
-        headers: { 'x-api-key': photoroomKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-        body,
-      });
-
-      if (r.ok) {
-        const buf = Buffer.from(await r.arrayBuffer());
-        return res.status(200).json({ base64: `data:image/png;base64,${buf.toString('base64')}`, service: 'photoroom' });
-      }
-      console.warn('Photoroom failed:', r.status);
-    } catch (e) {
-      console.warn('Photoroom error:', e.message);
-    }
+      const result = await callPhotoroom(imageBuffer, photoroomKey);
+      if (result) return res.status(200).json({ base64: result, service: 'photoroom' });
+    } catch (e) { console.warn('photoroom:', e.message); }
   }
 
-  // ── No service available ───────────────────────────────────────────────
   return res.status(402).json({
-    error: 'Background removal credits exhausted. Please add a new API key.',
-    hint: 'Get a free key at remove.bg/api (50 free/month) or photoroom.com/api (100 free/month)'
+    error: 'No background removal service available. Add CLIPDROP_KEY, REMOVE_BG_KEY, or PHOTOROOM_KEY to Vercel environment variables.',
   });
+}
+
+// ── Service implementations ───────────────────────────────────────────────
+
+async function callRemoveBg(imageBuffer, apiKey) {
+  const boundary = `----${Date.now()}`;
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image_file"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+    imageBuffer,
+    Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="size"\r\n\r\nauto\r\n--${boundary}\r\nContent-Disposition: form-data; name="bg_color"\r\n\r\nffffff\r\n--${boundary}--\r\n`),
+  ]);
+  const r = await fetch('https://api.remove.bg/v1.0/removebg', {
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body,
+  });
+  if (!r.ok) throw new Error(`remove.bg ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  return `data:image/png;base64,${buf.toString('base64')}`;
+}
+
+async function callClipdrop(imageBuffer, apiKey) {
+  const boundary = `----${Date.now()}`;
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image_file"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+    imageBuffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  const r = await fetch('https://clipdrop-api.co/remove-background/v1', {
+    method: 'POST',
+    headers: { 'x-api-key': apiKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body,
+  });
+  if (!r.ok) throw new Error(`clipdrop ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  return `data:image/png;base64,${buf.toString('base64')}`;
+}
+
+async function callPhotoroom(imageBuffer, apiKey) {
+  const boundary = `----${Date.now()}`;
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image_file"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`),
+    imageBuffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  const r = await fetch('https://sdk.photoroom.com/v1/segment', {
+    method: 'POST',
+    headers: { 'x-api-key': apiKey, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+    body,
+  });
+  if (!r.ok) throw new Error(`photoroom ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  return `data:image/png;base64,${buf.toString('base64')}`;
 }

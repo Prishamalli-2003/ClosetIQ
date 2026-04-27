@@ -1,10 +1,14 @@
 /**
  * Image processor for ClosetIQ.
  *
- * Background removal strategy (in order):
- *  1. @imgly/background-removal — runs IN THE BROWSER, no API key needed, free & unlimited
- *  2. Server proxy (/api/remove-bg) — remove.bg or Photoroom if API keys are set
- *  3. Fallback — white background only
+ * Background removal:
+ *  1. Calls /api/remove-bg (Vercel serverless) which tries remove.bg → ClipDrop → Photoroom
+ *  2. Falls back to white background if all services fail
+ *
+ * To enable background removal, add one of these to Vercel environment variables:
+ *  - CLIPDROP_KEY  (100 free/day — get at clipdrop.co/apis)
+ *  - REMOVE_BG_KEY (50 free/month — get at remove.bg/api)
+ *  - PHOTOROOM_KEY (paid — photoroom.com/api)
  */
 
 const MAX_SIZE = 600;
@@ -16,7 +20,6 @@ const looksLikeImage = (file) => {
   return /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(file.name || '');
 };
 
-/** Resize image to a blob */
 const resizeToBlob = (file, maxSize = MAX_SIZE) =>
   new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -41,7 +44,6 @@ const resizeToBlob = (file, maxSize = MAX_SIZE) =>
     img.src = url;
   });
 
-/** Blob → base64 data URL */
 const blobToBase64 = (blob) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -50,15 +52,14 @@ const blobToBase64 = (blob) =>
     reader.readAsDataURL(blob);
   });
 
-/** Add white background + padding after background removal */
-const addWhiteBackground = (blobOrUrl, padding = 0.05) =>
+const addWhiteBackground = (blobOrBase64, padding = 0.05) =>
   new Promise((resolve, reject) => {
-    const url = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
-    const isObjectUrl = typeof blobOrUrl !== 'string';
+    const isBlob = blobOrBase64 instanceof Blob;
+    const url = isBlob ? URL.createObjectURL(blobOrBase64) : blobOrBase64;
     const img = new Image();
-    img.onerror = () => { if (isObjectUrl) URL.revokeObjectURL(url); reject(new Error('Load failed')); };
+    img.onerror = () => { if (isBlob) URL.revokeObjectURL(url); reject(new Error('Load failed')); };
     img.onload = () => {
-      if (isObjectUrl) URL.revokeObjectURL(url);
+      if (isBlob) URL.revokeObjectURL(url);
       const padPx = Math.round(Math.max(img.width, img.height) * padding);
       const cw = img.width + padPx * 2;
       const ch = img.height + padPx * 2;
@@ -75,48 +76,11 @@ const addWhiteBackground = (blobOrUrl, padding = 0.05) =>
     img.src = url;
   });
 
-/** Fallback: resize + white background only */
 const fallbackProcess = async (file) => {
   const blob = await resizeToBlob(file, MAX_SIZE);
   return await blobToBase64(blob);
 };
 
-/**
- * Strategy 1: Use @imgly/background-removal loaded from CDN (no npm install needed).
- * Downloads ~10MB of ML model on first use, then cached by browser.
- * Runs entirely in the browser — no API key, free, unlimited.
- */
-let _bgRemoval = null;
-const removeBackgroundInBrowser = async (file) => {
-  // Load the library from CDN if not already loaded
-  if (!_bgRemoval) {
-    // Use the UMD build from jsDelivr
-    await new Promise((resolve, reject) => {
-      if (window.BackgroundRemoval) { resolve(); return; }
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js';
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
-    });
-    _bgRemoval = window.BackgroundRemoval || window.imglyBackgroundRemoval;
-  }
-
-  if (!_bgRemoval?.removeBackground) {
-    throw new Error('Background removal library not available');
-  }
-
-  const resultBlob = await _bgRemoval.removeBackground(file, {
-    publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/',
-    output: { format: 'image/png', quality: 0.9 },
-  });
-
-  return resultBlob;
-};
-
-/**
- * Strategy 2: Server proxy (remove.bg or Photoroom via /api/remove-bg).
- */
 const removeBackgroundViaProxy = async (imageBlob) => {
   const base64 = await blobToBase64(imageBlob);
   const res = await fetch('/api/remove-bg', {
@@ -129,7 +93,8 @@ const removeBackgroundViaProxy = async (imageBlob) => {
     throw new Error(err?.error || `Proxy error ${res.status}`);
   }
   const data = await res.json();
-  if (!data.base64) throw new Error('Empty response from proxy');
+  if (!data.base64) throw new Error('Empty response');
+  // Convert base64 PNG back to blob
   const parts = data.base64.split(',');
   const byteString = atob(parts[1]);
   const ab = new ArrayBuffer(byteString.length);
@@ -138,42 +103,23 @@ const removeBackgroundViaProxy = async (imageBlob) => {
   return new Blob([ab], { type: 'image/png' });
 };
 
-/**
- * Main entry point.
- *
- * Tries in-browser ML first (free, unlimited), then server proxy, then fallback.
- */
 export const prepareImageForUpload = async (file, options = {}) => {
   if (!looksLikeImage(file)) throw new Error('Please choose a valid image.');
 
-  // Strategy 1: In-browser ML (no API key, free, unlimited)
+  // Try background removal via server proxy
   try {
-    console.log('🤖 Removing background in browser (ML model)...');
     const resized = await resizeToBlob(file, options.maxWidth || MAX_SIZE);
-    const bgRemovedBlob = await removeBackgroundInBrowser(resized);
-    const base64 = await addWhiteBackground(bgRemovedBlob);
-    console.log('✅ Background removed in browser!');
-    return { base64, previewUrl: base64, method: 'browser-ml' };
+    const bgRemoved = await removeBackgroundViaProxy(resized);
+    const base64 = await addWhiteBackground(bgRemoved);
+    console.log('✅ Background removed');
+    return { base64, previewUrl: base64 };
   } catch (err) {
-    console.warn('⚠️ Browser ML failed:', err.message);
+    console.warn('⚠️ Background removal unavailable:', err.message);
   }
 
-  // Strategy 2: Server proxy
-  try {
-    console.log('🌐 Trying server proxy...');
-    const resized = await resizeToBlob(file, options.maxWidth || MAX_SIZE);
-    const bgRemovedBlob = await removeBackgroundViaProxy(resized);
-    const base64 = await addWhiteBackground(bgRemovedBlob);
-    console.log('✅ Background removed via proxy!');
-    return { base64, previewUrl: base64, method: 'proxy' };
-  } catch (err) {
-    console.warn('⚠️ Proxy failed:', err.message);
-  }
-
-  // Strategy 3: Fallback
-  console.log('📷 Using original photo with white background');
+  // Fallback: white background only
   const base64 = await fallbackProcess(file);
-  return { base64, previewUrl: base64, method: 'fallback' };
+  return { base64, previewUrl: base64 };
 };
 
 export const imageToBase64 = (file, options = {}) =>
