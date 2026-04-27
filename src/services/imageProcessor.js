@@ -45,26 +45,36 @@ const resizeToBlob = (file, maxSize = MAX_SIZE) =>
   });
 
 /**
- * Call remove.bg API — returns a PNG Blob with background removed.
+ * Call remove.bg via our Vercel proxy (avoids CORS).
+ * Falls back to direct API call for local development.
  */
 const removeBackground = async (imageBlob) => {
-  const formData = new FormData();
-  formData.append('image_file', imageBlob, 'photo.jpg');
-  formData.append('size', 'auto');
-  formData.append('bg_color', 'ffffff'); // white background
+  // Convert blob to base64 to send to our proxy
+  const base64 = await blobToBase64(imageBlob);
 
-  const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+  // Use our serverless proxy (works on Vercel, avoids CORS)
+  const proxyUrl = '/api/remove-bg';
+
+  const res = await fetch(proxyUrl, {
     method: 'POST',
-    headers: { 'X-Api-Key': REMOVE_BG_API_KEY },
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64: base64 }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.errors?.[0]?.title || `remove.bg error ${res.status}`);
+    throw new Error(err?.error || `remove.bg proxy error ${res.status}`);
   }
 
-  return await res.blob(); // PNG with white background
+  const data = await res.json();
+  if (!data.base64) throw new Error('No result from remove.bg');
+
+  // Convert base64 back to blob
+  const byteString = atob(data.base64.split(',')[1]);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+  return new Blob([ab], { type: 'image/png' });
 };
 
 /**
