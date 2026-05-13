@@ -58,17 +58,38 @@ const PurchaseSupport = () => {
       return;
     }
 
-    // 1. Check image similarity — ONLY within the same category
+    // 1. Check image similarity — ONLY within the same category AND similar color
     let visualMatch = null;
     let highestSimilarity = 0;
 
     if (newItem.imageHash && newItem.category) {
-      // Only compare shoes with shoes, tops with tops, etc.
-      const sameCategoryItems = wardrobe.filter(item =>
-        item.category === newItem.category &&
-        item.imageUrl &&
-        item.imageUrl.startsWith('data:')
-      );
+      const newColor = newItem.color || '';
+
+      // Color groups — only compare within same color group
+      const colorGroup = (c) => {
+        const dark = ['black', 'navy', 'maroon', 'burgundy', 'brown', 'olive'];
+        const light = ['white', 'cream', 'beige', 'lavender', 'mint', 'silver'];
+        const warm = ['red', 'coral', 'orange', 'gold', 'yellow', 'rose-gold'];
+        const cool = ['blue', 'teal', 'turquoise', 'purple'];
+        const pink = ['pink'];
+        const green = ['green', 'olive', 'emerald'];
+        if (dark.includes(c)) return 'dark';
+        if (light.includes(c)) return 'light';
+        if (warm.includes(c)) return 'warm';
+        if (cool.includes(c)) return 'cool';
+        if (pink.includes(c)) return 'pink';
+        if (green.includes(c)) return 'green';
+        return c; // exact match required for others
+      };
+
+      const sameCategoryItems = wardrobe.filter(item => {
+        if (item.category !== newItem.category) return false;
+        if (!item.imageUrl || !item.imageUrl.startsWith('data:')) return false;
+        // Only compare items with same or similar color
+        const sameColor = item.color === newColor;
+        const sameGroup = colorGroup(item.color) === colorGroup(newColor);
+        return sameColor || sameGroup;
+      });
 
       for (const item of sameCategoryItems) {
         const itemHash = await imageFingerprint(item.imageUrl);
@@ -88,12 +109,12 @@ const PurchaseSupport = () => {
     let recommendation, reasoning;
 
     // Visual match takes highest priority (same photo = same item)
-    if (highestSimilarity >= 0.85 && visualMatch) {
+    if (highestSimilarity >= 0.90 && visualMatch) {
       recommendation = "DON'T BUY — You already own this exact item";
-      reasoning = `The photo matches "${visualMatch.name}" already in your wardrobe (${visualMatch.brand || 'no brand'}, ₹${visualMatch.purchasePrice || 0}, worn ${visualMatch.wearCount || 0}×). Different brand or price doesn't justify buying the same item again.`;
-    } else if (highestSimilarity >= 0.70 && visualMatch) {
+      reasoning = `The photo matches "${visualMatch.name}" (${visualMatch.color}) already in your wardrobe (${visualMatch.brand || 'no brand'}, ₹${visualMatch.purchasePrice || 0}, worn ${visualMatch.wearCount || 0}×). Different brand or price doesn't justify buying the same item again.`;
+    } else if (highestSimilarity >= 0.80 && visualMatch) {
       recommendation = "DON'T BUY — Very similar item already owned";
-      reasoning = `This looks very similar to "${visualMatch.name}" in your wardrobe. Even at a different price point, you already have this type of item covered.`;
+      reasoning = `This looks very similar to "${visualMatch.name}" (${visualMatch.color}) in your wardrobe. Even at a different price point, you already have this type of item covered.`;
     } else if (redundancyResult.similarCount === 0) {
       recommendation = 'BUY — This adds variety to your wardrobe';
       reasoning = "You don't own anything similar. This is a good addition.";
