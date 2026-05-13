@@ -58,13 +58,19 @@ const PurchaseSupport = () => {
       return;
     }
 
-    // 1. Check image similarity against all wardrobe items
+    // 1. Check image similarity — ONLY within the same category
     let visualMatch = null;
     let highestSimilarity = 0;
 
-    if (newItem.imageHash) {
-      for (const item of wardrobe) {
-        if (!item.imageUrl || !item.imageUrl.startsWith('data:')) continue;
+    if (newItem.imageHash && newItem.category) {
+      // Only compare shoes with shoes, tops with tops, etc.
+      const sameCategoryItems = wardrobe.filter(item =>
+        item.category === newItem.category &&
+        item.imageUrl &&
+        item.imageUrl.startsWith('data:')
+      );
+
+      for (const item of sameCategoryItems) {
         const itemHash = await imageFingerprint(item.imageUrl);
         if (!itemHash) continue;
         const sim = hashSimilarity(newItem.imageHash, itemHash);

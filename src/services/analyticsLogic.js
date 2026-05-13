@@ -199,9 +199,10 @@ export const detectRedundancy = (items, newItem) => {
   const newType = newItem.type || '';
   const newBrand = (newItem.brand || '').toLowerCase().trim();
 
-  // Accessory sub-types that are functionally the same regardless of color/brand
+  // Categories where type must also match (a shoe ≠ a bag even if same color)
+  const STRICT_TYPE_CATEGORIES = ['shoes', 'accessory'];
+  // Accessory sub-types that are functionally the same
   const BAG_TYPES = ['handbag', 'bag', 'tote', 'clutch', 'backpack', 'sling', 'purse'];
-  const SHOE_TYPES = ['sneakers', 'boots', 'heels', 'sandals', 'flats', 'loafers', 'stilettos', 'wedges', 'ballet-flats'];
   const WATCH_TYPES = ['watch'];
 
   const similarItems = items.filter(item => {
@@ -211,37 +212,35 @@ export const detectRedundancy = (items, newItem) => {
     const itemType = item.type || '';
     const priceWindow = Math.max(1000, newPrice * 0.5);
 
+    // MUST be same category — a shoe never matches a saree
+    if (item.category !== newCategory) return false;
+
     // 1. Exact name match
     if (newName.length > 2 && itemName === newName) return true;
 
-    // 2. Same accessory type (bag = bag regardless of color/brand)
-    if (newCategory === 'accessory' && item.category === 'accessory') {
+    // 2. For shoes — same type (sneakers = sneakers, heels = heels)
+    if (newCategory === 'shoes') {
+      return newType === itemType && newColor === item.color;
+    }
+
+    // 3. For accessories — same functional type
+    if (newCategory === 'accessory') {
       const newIsBag = BAG_TYPES.some(t => newType.includes(t) || newName.includes(t));
       const itemIsBag = BAG_TYPES.some(t => itemType.includes(t) || itemName.includes(t));
       if (newIsBag && itemIsBag) return true;
-
-      const newIsShoe = SHOE_TYPES.includes(newType);
-      const itemIsShoe = SHOE_TYPES.includes(itemType);
-      if (newIsShoe && itemIsShoe && newType === itemType) return true;
-
-      const newIsWatch = WATCH_TYPES.includes(newType);
-      const itemIsWatch = WATCH_TYPES.includes(itemType);
-      if (newIsWatch && itemIsWatch) return true;
+      if (WATCH_TYPES.includes(newType) && WATCH_TYPES.includes(itemType)) return true;
+      // Other accessories: same type + same color
+      return newType === itemType && newColor === item.color;
     }
 
-    // 3. Same shoe type (sneakers = sneakers regardless of brand)
-    if (newCategory === 'shoes' && item.category === 'shoes' && newType === itemType) return true;
-
     // 4. Same brand + same category + same color
-    if (newBrand && itemBrand && newBrand === itemBrand &&
-        item.category === newCategory && item.color === newColor) return true;
+    if (newBrand && itemBrand && newBrand === itemBrand && item.color === newColor) return true;
 
     // 5. Same category + same color + similar price
-    if (item.category === newCategory && item.color === newColor &&
-        newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow) return true;
+    if (item.color === newColor && newPrice > 0 && Math.abs(itemPrice - newPrice) < priceWindow) return true;
 
-    // 6. Same category + same color (general)
-    if (item.category === newCategory && item.color === newColor) return true;
+    // 6. Same category + same color
+    if (item.color === newColor) return true;
 
     // 7. Name word overlap (2+ meaningful words)
     if (newName.length > 4) {
